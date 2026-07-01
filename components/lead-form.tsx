@@ -1,0 +1,95 @@
+"use client";
+
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { Lead, User } from "@prisma/client";
+import { Button } from "@/components/ui";
+import { leadTypes, pipelineStages } from "@/lib/crm";
+
+type LeadWithNullable = Partial<Lead>;
+
+export function LeadForm({ agents, lead }: { agents: User[]; lead?: LeadWithNullable }) {
+  const router = useRouter();
+  const [error, setError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  async function onSubmit(formData: FormData) {
+    setSaving(true);
+    setError(null);
+    const payload = Object.fromEntries(formData.entries());
+    const response = await fetch(lead?.id ? `/api/leads/${lead.id}` : "/api/leads", {
+      method: lead?.id ? "PATCH" : "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+    setSaving(false);
+    if (!response.ok) {
+      setError("Please check the lead details and try again.");
+      return;
+    }
+    const data = await response.json();
+    router.push(`/dashboard/leads/${data.lead.id}`);
+    router.refresh();
+  }
+
+  return (
+    <form action={onSubmit} className="space-y-6">
+      {error ? <p className="rounded-md bg-red-50 p-3 text-sm text-red-700">{error}</p> : null}
+      <div className="grid gap-4 md:grid-cols-2">
+        <Field label="First name" name="firstName" defaultValue={lead?.firstName} required />
+        <Field label="Last name" name="lastName" defaultValue={lead?.lastName} required />
+        <Field label="Email" name="email" type="email" defaultValue={lead?.email ?? ""} />
+        <Field label="Phone" name="phone" defaultValue={lead?.phone ?? ""} />
+        <Select label="Lead type" name="leadType" defaultValue={lead?.leadType ?? "unknown"} options={leadTypes} />
+        <Select label="Pipeline status" name="status" defaultValue={lead?.status ?? "new_lead"} options={pipelineStages} />
+        <Field label="Source" name="source" defaultValue={lead?.source ?? ""} placeholder="Website, referral, Facebook ad" />
+        <div className="grid gap-2">
+          <label htmlFor="assignedAgentId">Assigned agent</label>
+          <select id="assignedAgentId" name="assignedAgentId" defaultValue={lead?.assignedAgentId ?? ""}>
+            <option value="">Unassigned</option>
+            {agents.map((agent) => (
+              <option key={agent.id} value={agent.id}>
+                {agent.name ?? agent.email}
+              </option>
+            ))}
+          </select>
+        </div>
+        <Field label="Budget min" name="budgetMin" type="number" defaultValue={lead?.budgetMin ?? ""} />
+        <Field label="Budget max" name="budgetMax" type="number" defaultValue={lead?.budgetMax ?? ""} />
+        <Field label="Desired location" name="desiredLocation" defaultValue={lead?.desiredLocation ?? ""} />
+        <Field label="Property interest" name="propertyInterest" defaultValue={lead?.propertyInterest ?? ""} />
+        <Field label="Timeframe" name="timeframe" defaultValue={lead?.timeframe ?? ""} />
+      </div>
+      <div className="grid gap-2">
+        <label htmlFor="notes">Internal notes</label>
+        <textarea id="notes" name="notes" rows={5} defaultValue={lead?.notes ?? ""} />
+      </div>
+      <Button disabled={saving}>{saving ? "Saving..." : lead?.id ? "Update lead" : "Create lead"}</Button>
+    </form>
+  );
+}
+
+function Field(props: React.InputHTMLAttributes<HTMLInputElement> & { label: string; name: string }) {
+  const { label, name, ...inputProps } = props;
+  return (
+    <div className="grid gap-2">
+      <label htmlFor={name}>{label}</label>
+      <input id={name} name={name} {...inputProps} />
+    </div>
+  );
+}
+
+function Select<T extends string>({ label, name, defaultValue, options }: { label: string; name: string; defaultValue: T; options: { value: T; label: string }[] }) {
+  return (
+    <div className="grid gap-2">
+      <label htmlFor={name}>{label}</label>
+      <select id={name} name={name} defaultValue={defaultValue}>
+        {options.map((option) => (
+          <option key={option.value} value={option.value}>
+            {option.label}
+          </option>
+        ))}
+      </select>
+    </div>
+  );
+}
