@@ -11,10 +11,20 @@ import {
   MembershipRole
 } from "@prisma/client";
 import bcrypt from "bcryptjs";
+import { assertSeedCanRun } from "../lib/seed-safety";
 
 const prisma = new PrismaClient();
+const demoLeadEmails = [
+  "claire.broussard@example.com",
+  "michael.guidry@example.com",
+  "tasha.landry@example.com",
+  "andre.comeaux@example.com",
+  "nolan.mouton@example.com"
+];
 
 async function main() {
+  assertSeedCanRun();
+
   const passwordHash = await bcrypt.hash("Password123!", 12);
 
   const internalOrg = await prisma.organization.upsert({
@@ -127,10 +137,6 @@ async function main() {
     create: { userId: teamOwner.id, organizationId: teamOrg.id, role: MembershipRole.owner }
   });
 
-  await prisma.activity.deleteMany();
-  await prisma.task.deleteMany();
-  await prisma.lead.deleteMany();
-
   const leads = [
     {
       firstName: "Claire",
@@ -219,8 +225,27 @@ async function main() {
     }
   ];
 
+  const existingDemoLeads = await prisma.lead.findMany({
+    where: { organizationId: internalOrg.id, email: { in: demoLeadEmails } },
+    select: { id: true }
+  });
+  const existingDemoLeadIds = existingDemoLeads.map((lead) => lead.id);
+
+  if (existingDemoLeadIds.length) {
+    await prisma.activity.deleteMany({ where: { leadId: { in: existingDemoLeadIds } } });
+    await prisma.task.deleteMany({ where: { leadId: { in: existingDemoLeadIds } } });
+  }
+
+  const seededLeadIds: string[] = [];
+
   for (const data of leads) {
-    const lead = await prisma.lead.create({ data });
+    const existingLead = await prisma.lead.findFirst({
+      where: { organizationId: data.organizationId, email: data.email }
+    });
+    const lead = existingLead
+      ? await prisma.lead.update({ where: { id: existingLead.id }, data })
+      : await prisma.lead.create({ data });
+    seededLeadIds.push(lead.id);
     await prisma.activity.create({
       data: {
         organizationId: internalOrg.id,
@@ -232,7 +257,10 @@ async function main() {
     });
   }
 
-  const createdLeads = await prisma.lead.findMany();
+  const createdLeads = await prisma.lead.findMany({
+    where: { id: { in: seededLeadIds } },
+    orderBy: { createdAt: "asc" }
+  });
   const today = new Date();
   today.setHours(11, 0, 0, 0);
   const tomorrow = new Date(today);

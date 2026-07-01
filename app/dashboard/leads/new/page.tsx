@@ -7,6 +7,7 @@ export const dynamic = "force-dynamic";
 export default async function NewLeadPage() {
   const activeOrg = await getActiveOrganization();
   const agents = await getOrganizationUsers(activeOrg.id);
+  const agentOptions = agents.map(({ id, name, email }) => ({ id, name, email }));
   return (
     <div className="space-y-6">
       <div>
@@ -14,7 +15,7 @@ export default async function NewLeadPage() {
         <h2 className="mt-2 text-3xl font-bold text-slate-900">Add a Lafayette opportunity</h2>
       </div>
       <Card className="p-6">
-        <LeadForm agents={agents} />
+        <LeadForm agents={agentOptions} />
       </Card>
     </div>
   );

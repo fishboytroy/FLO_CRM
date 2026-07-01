@@ -2,13 +2,35 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { Lead, User } from "@prisma/client";
+import { LeadType, PipelineStage } from "@prisma/client";
 import { Button } from "@/components/ui";
 import { leadTypes, pipelineStages } from "@/lib/crm";
 
-type LeadWithNullable = Partial<Lead>;
+export type UserOption = {
+  id: string;
+  name: string | null;
+  email: string;
+};
 
-export function LeadForm({ agents, lead }: { agents: User[]; lead?: LeadWithNullable }) {
+export type LeadFormValue = {
+  id?: string;
+  firstName?: string;
+  lastName?: string;
+  email?: string | null;
+  phone?: string | null;
+  leadType?: LeadType;
+  status?: PipelineStage;
+  source?: string | null;
+  assignedAgentId?: string | null;
+  budgetMin?: number | null;
+  budgetMax?: number | null;
+  desiredLocation?: string | null;
+  propertyInterest?: string | null;
+  timeframe?: string | null;
+  notes?: string | null;
+};
+
+export function LeadForm({ agents, lead }: { agents: UserOption[]; lead?: LeadFormValue }) {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);

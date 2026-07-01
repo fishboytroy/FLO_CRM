@@ -28,6 +28,8 @@ npm run prisma:migrate -- --name init
 npm run prisma:seed
 ```
 
+The seed script is intended for local/demo data. In production it refuses to run unless `ALLOW_PRODUCTION_SEED=true` is set, and it only refreshes the known demo leads instead of deleting all CRM leads.
+
 4. Start the app:
 
 ```bash
@@ -92,6 +94,8 @@ AUTH_SECRET="generate-a-long-random-secret"
 AUTH_URL="https://crm.lafayettelouisianarealestate.com"
 CRM_PUBLIC_API_KEY="same-key-used-by-wordpress-snippet"
 CRM_ALLOWED_ORIGIN="https://lafayettelouisianarealestate.com"
+CRM_PUBLIC_LEAD_RATE_LIMIT_PER_MINUTE="12"
+CRM_PUBLIC_LEAD_MAX_BODY_BYTES="32768"
 ```
 
 Production database setup:
@@ -136,6 +140,14 @@ Supported JSON fields include:
 ```
 
 The endpoint normalizes common field names like `first_name`, `last_name`, `full_name`, `lead_type`, `budget_min`, `budget_max`, `desired_location`, and UTM fields. Each successful submission creates a new lead in the `New Lead` pipeline stage and adds a `lead_created` activity record.
+
+Public intake hardening:
+
+- Browser CORS requests are allowed only from `CRM_ALLOWED_ORIGIN`.
+- Server-to-server requests without an `Origin` header are supported for the WordPress PHP snippet.
+- API keys must be sent in the `x-crm-api-key` header or `Authorization: Bearer ...` header.
+- JSON payloads are capped by `CRM_PUBLIC_LEAD_MAX_BODY_BYTES`.
+- Requests are rate limited per detected client IP by `CRM_PUBLIC_LEAD_RATE_LIMIT_PER_MINUTE`.
 
 The current WordPress site has no active form plugin installed. When a form plugin or custom form is added, configure it to send a webhook to the deployed CRM URL, for example:
 

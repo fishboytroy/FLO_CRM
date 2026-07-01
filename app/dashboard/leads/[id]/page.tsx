@@ -26,6 +26,25 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
   ]);
   if (!lead) notFound();
 
+  const userOptions = users.map(({ id, name, email }) => ({ id, name, email }));
+  const leadFormValue = {
+    id: lead.id,
+    firstName: lead.firstName,
+    lastName: lead.lastName,
+    email: lead.email,
+    phone: lead.phone,
+    leadType: lead.leadType,
+    status: lead.status,
+    source: lead.source,
+    assignedAgentId: lead.assignedAgentId,
+    budgetMin: lead.budgetMin,
+    budgetMax: lead.budgetMax,
+    desiredLocation: lead.desiredLocation,
+    propertyInterest: lead.propertyInterest,
+    timeframe: lead.timeframe,
+    notes: lead.notes
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-start justify-between gap-4">
@@ -64,7 +83,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
           <Card className="p-6">
             <h3 className="text-lg font-bold">Edit lead</h3>
             <div className="mt-5">
-              <LeadForm agents={users} lead={lead} />
+              <LeadForm agents={userOptions} lead={leadFormValue} />
             </div>
           </Card>
         </div>
@@ -80,7 +99,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
           <Card className="p-6">
             <h3 className="text-lg font-bold">Tasks</h3>
             <div className="mt-4">
-              <TaskForm lead={lead} users={users} />
+              <TaskForm lead={{ id: lead.id }} users={userOptions} />
             </div>
             <div className="mt-6 space-y-3">
               {lead.tasks.map((task) => (

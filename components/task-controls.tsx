@@ -1,11 +1,11 @@
 "use client";
 
-import { Lead, User } from "@prisma/client";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button } from "@/components/ui";
+import { UserOption } from "@/components/lead-form";
 
-export function TaskForm({ lead, users }: { lead: Pick<Lead, "id">; users: User[] }) {
+export function TaskForm({ lead, users }: { lead: { id: string }; users: UserOption[] }) {
   const router = useRouter();
   const [saving, setSaving] = useState(false);
 
