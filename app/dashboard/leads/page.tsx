@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { format } from "date-fns";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { Badge, Card, EmptyState } from "@/components/ui";
@@ -19,6 +20,7 @@ export default async function LeadsPage({ searchParams }: { searchParams?: Promi
             { lastName: { contains: q, mode: "insensitive" } },
             { email: { contains: q, mode: "insensitive" } },
             { phone: { contains: q, mode: "insensitive" } },
+            { zipCode: { contains: q, mode: "insensitive" } },
             { desiredLocation: { contains: q, mode: "insensitive" } }
           ]
         }
@@ -37,19 +39,24 @@ export default async function LeadsPage({ searchParams }: { searchParams?: Promi
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+        <div className="min-w-0">
           <p className="text-sm font-semibold uppercase tracking-[0.18em] text-bayou-600">{activeOrg.name}</p>
-          <h2 className="mt-2 text-3xl font-bold text-slate-900">Contacts and opportunities</h2>
+          <h2 className="mt-2 text-2xl font-bold text-slate-900 sm:text-3xl">Contacts and opportunities</h2>
         </div>
-        <Link href="/dashboard/leads/new" className="rounded-md bg-bayou-600 px-4 py-2 text-sm font-semibold text-white hover:bg-bayou-700">
-          New Lead
-        </Link>
+        <div className="grid gap-2 sm:flex">
+          <Link href="/dashboard/leads/review" prefetch={false} className="inline-flex min-h-11 items-center justify-center rounded-md border border-amber-200 bg-amber-50 px-4 py-2 text-sm font-semibold text-amber-800 hover:bg-amber-100">
+            Manual Review
+          </Link>
+          <Link href="/dashboard/leads/new" prefetch={false} className="inline-flex min-h-11 items-center justify-center rounded-md bg-bayou-600 px-4 py-2 text-sm font-semibold text-white hover:bg-bayou-700">
+            New Lead
+          </Link>
+        </div>
       </div>
 
       <Card className="p-4">
-        <form className="grid gap-3 md:grid-cols-6">
-          <input name="q" placeholder="Search leads..." defaultValue={q} className="md:col-span-2" />
+        <form className="grid gap-3 md:grid-cols-2 xl:grid-cols-6">
+          <input name="q" placeholder="Search leads..." defaultValue={q} className="xl:col-span-2" />
           <select name="leadType" defaultValue={params.leadType ?? ""}>
             <option value="">All types</option>
             {leadTypes.map((type) => (
@@ -84,43 +91,85 @@ export default async function LeadsPage({ searchParams }: { searchParams?: Promi
               ) : null
             )}
           </select>
-          <button className="rounded-md bg-cypress px-4 py-2 text-sm font-semibold text-white">Filter</button>
+          <button className="min-h-11 rounded-md bg-cypress px-4 py-2 text-sm font-semibold text-white">Filter</button>
         </form>
       </Card>
 
       <Card className="overflow-hidden">
         {leads.length ? (
-          <table className="w-full text-left text-sm">
-            <thead className="bg-slate-100 text-xs uppercase tracking-wide text-slate-500">
-              <tr>
-                <th className="px-4 py-3">Lead</th>
-                <th className="px-4 py-3">Type</th>
-                <th className="px-4 py-3">Stage</th>
-                <th className="px-4 py-3">Location</th>
-                <th className="px-4 py-3">Budget</th>
-                <th className="px-4 py-3">Agent</th>
-                <th className="px-4 py-3">Open tasks</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
+          <>
+            <div className="grid gap-3 p-4 md:hidden">
               {leads.map((lead) => (
-                <tr key={lead.id} className="hover:bg-slate-50">
-                  <td className="px-4 py-4">
-                    <Link href={`/dashboard/leads/${lead.id}`} className="font-bold text-slate-900 hover:text-bayou-700">
-                      {lead.firstName} {lead.lastName}
-                    </Link>
-                    <p className="text-xs text-slate-500">{lead.email ?? lead.phone ?? "No contact info"}</p>
-                  </td>
-                  <td className="px-4 py-4"><Badge tone="green">{labelFor(leadTypes, lead.leadType)}</Badge></td>
-                  <td className="px-4 py-4">{labelFor(pipelineStages, lead.status)}</td>
-                  <td className="px-4 py-4">{lead.desiredLocation ?? "Not set"}</td>
-                  <td className="px-4 py-4">{money(lead.budgetMin)} - {money(lead.budgetMax)}</td>
-                  <td className="px-4 py-4">{lead.assignedAgent?.name ?? "Unassigned"}</td>
-                  <td className="px-4 py-4">{lead.tasks.filter((task) => task.status === "pending").length}</td>
-                </tr>
+                <Link key={lead.id} href={`/dashboard/leads/${lead.id}`} prefetch={false} className="block rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="truncate font-bold text-slate-900">
+                        {lead.firstName} {lead.lastName}
+                      </p>
+                      <p className="mt-1 break-words text-xs text-slate-500">{lead.email ?? lead.phone ?? "No contact info"}</p>
+                    </div>
+                    <Badge tone="green">{labelFor(leadTypes, lead.leadType)}</Badge>
+                  </div>
+                  <div className="mt-4 grid gap-3 text-sm text-slate-600">
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">Stage</span>
+                      <span className="text-right font-semibold text-slate-800">{labelFor(pipelineStages, lead.status)}</span>
+                    </div>
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">ZIP</span>
+                      <span className="font-semibold text-slate-800">{lead.zipCode ?? "No ZIP"}</span>
+                    </div>
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Source</p>
+                      <p className="mt-1 break-words text-slate-700">{lead.source ?? "No source"}</p>
+                    </div>
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">Created</span>
+                      <span className="font-semibold text-slate-800">{format(lead.createdAt, "MMM d, yyyy")}</span>
+                    </div>
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">Agent</span>
+                      <span className="text-right font-semibold text-slate-800">{lead.assignedAgent?.name ?? "Unassigned"}</span>
+                    </div>
+                  </div>
+                </Link>
               ))}
-            </tbody>
-          </table>
+            </div>
+            <table className="hidden w-full text-left text-sm md:table">
+              <thead className="bg-slate-100 text-xs uppercase tracking-wide text-slate-500">
+                <tr>
+                  <th className="px-4 py-3">Lead</th>
+                  <th className="px-4 py-3">Type</th>
+                  <th className="px-4 py-3">Stage</th>
+                  <th className="px-4 py-3">Location</th>
+                  <th className="px-4 py-3">Budget</th>
+                  <th className="px-4 py-3">Agent</th>
+                  <th className="px-4 py-3">Open tasks</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {leads.map((lead) => (
+                  <tr key={lead.id} className="hover:bg-slate-50">
+                    <td className="px-4 py-4">
+                      <Link href={`/dashboard/leads/${lead.id}`} prefetch={false} className="font-bold text-slate-900 hover:text-bayou-700">
+                        {lead.firstName} {lead.lastName}
+                      </Link>
+                      <p className="text-xs text-slate-500">{lead.email ?? lead.phone ?? "No contact info"}</p>
+                    </td>
+                    <td className="px-4 py-4"><Badge tone="green">{labelFor(leadTypes, lead.leadType)}</Badge></td>
+                    <td className="px-4 py-4">{labelFor(pipelineStages, lead.status)}</td>
+                    <td className="px-4 py-4">
+                      <p>{lead.desiredLocation ?? "Not set"}</p>
+                      <p className="mt-1 text-xs text-slate-500">ZIP {lead.zipCode ?? "-"}</p>
+                    </td>
+                    <td className="px-4 py-4">{money(lead.budgetMin)} - {money(lead.budgetMax)}</td>
+                    <td className="px-4 py-4">{lead.assignedAgent?.name ?? "Unassigned"}</td>
+                    <td className="px-4 py-4">{lead.tasks.filter((task) => task.status === "pending").length}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </>
         ) : (
           <div className="p-6">
             <EmptyState title="No leads found" description="Create a lead or adjust the search and filters." />

@@ -21,11 +21,11 @@ export function PipelineBoard({ leads }: { leads: PipelineLead[] }) {
   }
 
   return (
-    <div className="grid min-h-[680px] gap-4 overflow-x-auto pb-4 lg:grid-cols-4 xl:grid-cols-8">
+    <div className="grid gap-4 pb-4 sm:grid-cols-2 lg:grid-cols-4 2xl:grid-cols-8">
       {pipelineStages.map((stage) => {
         const stageLeads = leads.filter((lead) => lead.status === stage.value);
         return (
-          <section key={stage.value} className="min-w-64">
+          <section key={stage.value} className="min-w-0 rounded-lg border border-slate-200 bg-white/60 p-3">
             <div className="mb-3 flex items-center justify-between">
               <h3 className="text-sm font-bold text-slate-800">{stage.label}</h3>
               <Badge>{stageLeads.length}</Badge>
@@ -33,10 +33,10 @@ export function PipelineBoard({ leads }: { leads: PipelineLead[] }) {
             <div className="space-y-3">
               {stageLeads.map((lead) => (
                 <Card key={lead.id} className="p-4">
-                  <Link href={`/dashboard/leads/${lead.id}`} className="font-bold text-slate-900 hover:text-bayou-700">
+                  <Link href={`/dashboard/leads/${lead.id}`} prefetch={false} className="break-words font-bold text-slate-900 hover:text-bayou-700">
                     {lead.firstName} {lead.lastName}
                   </Link>
-                  <p className="mt-1 text-xs text-slate-500">{lead.desiredLocation ?? "Location not set"}</p>
+                  <p className="mt-1 break-words text-xs text-slate-500">{lead.desiredLocation ?? "Location not set"}</p>
                   <p className="mt-3 text-sm text-slate-700">
                     {money(lead.budgetMin)} - {money(lead.budgetMax)}
                   </p>

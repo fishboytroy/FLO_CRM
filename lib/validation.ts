@@ -2,6 +2,27 @@ import { LeadType, PipelineStage, TaskStatus } from "@prisma/client";
 import { z } from "zod";
 
 const optionalText = z.string().trim().optional().transform((value) => (value ? value : undefined));
+const optionalZipText = z
+  .union([z.string(), z.number()])
+  .optional()
+  .transform((value) => {
+    if (value === undefined || value === "") return undefined;
+    return String(value).trim() || undefined;
+  });
+const optionalZipCode = z
+  .union([z.string(), z.number()])
+  .optional()
+  .transform((value, ctx) => {
+    if (value === undefined || value === "") return undefined;
+    const trimmed = String(value).trim();
+    if (!trimmed) return undefined;
+    const match = trimmed.match(/^(\d{5})(?:-\d{4})?$/);
+    if (!match) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Use a valid 5-digit ZIP or ZIP+4" });
+      return z.NEVER;
+    }
+    return match[1];
+  });
 const optionalInt = z
   .union([z.string(), z.number()])
   .optional()
@@ -23,6 +44,7 @@ export const leadSchema = z.object({
   budgetMin: optionalInt,
   budgetMax: optionalInt,
   desiredLocation: optionalText,
+  zipCode: optionalZipCode,
   propertyInterest: optionalText,
   timeframe: optionalText,
   notes: optionalText
@@ -72,6 +94,14 @@ export const publicLeadSchema = z
     budget_max: optionalInt,
     desiredLocation: optionalText,
     desired_location: optionalText,
+    zipCode: optionalZipText,
+    zip_code: optionalZipText,
+    postalCode: optionalZipText,
+    postal_code: optionalZipText,
+    propertyZipCode: optionalZipText,
+    property_zip_code: optionalZipText,
+    desiredZipCode: optionalZipText,
+    desired_zip_code: optionalZipText,
     propertyInterest: optionalText,
     property_interest: optionalText,
     timeframe: optionalText,

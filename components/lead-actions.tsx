@@ -20,7 +20,7 @@ export function DeleteLeadButton({ id }: { id: string }) {
   }
 
   return (
-    <Button variant="danger" onClick={deleteLead} disabled={deleting}>
+    <Button className="w-full sm:w-auto" variant="danger" onClick={deleteLead} disabled={deleting}>
       {deleting ? "Deleting..." : "Delete"}
     </Button>
   );
@@ -49,7 +49,7 @@ export function NoteForm({ leadId }: { leadId: string }) {
   return (
     <div className="space-y-3">
       <textarea value={message} onChange={(event) => setMessage(event.target.value)} rows={4} placeholder="Add an internal note..." />
-      <Button onClick={submit} disabled={saving || !message.trim()}>
+      <Button className="w-full sm:w-auto" onClick={submit} disabled={saving || !message.trim()}>
         {saving ? "Adding..." : "Add note"}
       </Button>
     </div>

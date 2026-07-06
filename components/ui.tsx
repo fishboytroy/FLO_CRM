@@ -12,7 +12,7 @@ export function Badge({ children, tone = "neutral" }: { children: React.ReactNod
     red: "bg-red-100 text-red-700",
     blue: "bg-sky-100 text-sky-700"
   };
-  return <span className={clsx("inline-flex rounded-full px-2.5 py-1 text-xs font-semibold", tones[tone])}>{children}</span>;
+  return <span className={clsx("inline-flex max-w-full items-center rounded-full px-2.5 py-1 text-xs font-semibold", tones[tone])}>{children}</span>;
 }
 
 export function Button({ children, className = "", variant = "primary", ...props }: React.ButtonHTMLAttributes<HTMLButtonElement> & { variant?: "primary" | "secondary" | "danger" }) {
@@ -22,7 +22,7 @@ export function Button({ children, className = "", variant = "primary", ...props
     danger: "bg-red-600 text-white hover:bg-red-700"
   };
   return (
-    <button className={clsx("rounded-md px-4 py-2 text-sm font-semibold transition", variants[variant], className)} {...props}>
+    <button className={clsx("min-h-11 rounded-md px-4 py-2 text-sm font-semibold transition", variants[variant], className)} {...props}>
       {children}
     </button>
   );

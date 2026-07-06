@@ -65,6 +65,9 @@ Tenant ownership models:
 - `Lead`, `Task`, and `Activity` all include `organizationId`.
 - `Organization` includes billing placeholders for plan, subscription status, Stripe customer, Stripe subscription, and current period end.
 - `Lead` includes distribution placeholders: `distributionStatus`, `claimedAt`, `exclusiveUntil`, `leadPriceCents`, and `marketArea`.
+- `Lead.zipCode` captures the future allocation ZIP, and organization owners/admins can manage sample purchased territories at `/dashboard/settings/territories`.
+- Manual review leads that need ZIP/territory review are visible at `/dashboard/leads/review`.
+- Platform admins can create controlled validation organizations, memberships, and ZIP territories at `/dashboard/platform/organizations`.
 
 Current seeded organizations:
 
@@ -77,6 +80,18 @@ Website leads from `lafayettelouisianarealestate.com` land in the internal platf
 ## Phase 2 Notes
 
 Public lead capture forms can post into the same `Lead` model. Keep external form endpoints separate from dashboard routes and create `Activity` rows with `type = lead_created` for each captured lead.
+
+Membership and zip-code allocation planning is documented in:
+
+```text
+docs/membership-and-zip-code-allocation.md
+```
+
+Team and paid organization validation is documented in:
+
+```text
+docs/team-paid-organization-validation.md
+```
 
 ## Production Deployment
 
@@ -96,16 +111,26 @@ CRM_PUBLIC_API_KEY="same-key-used-by-wordpress-snippet"
 CRM_ALLOWED_ORIGIN="https://lafayettelouisianarealestate.com"
 CRM_PUBLIC_LEAD_RATE_LIMIT_PER_MINUTE="12"
 CRM_PUBLIC_LEAD_MAX_BODY_BYTES="32768"
+CRM_APP_URL="https://crm.lafayettelouisianarealestate.com"
+CRM_EMAIL_FROM="crm@lafayettelouisianarealestate.com"
+CRM_EMAIL_FROM_NAME="Lafayette Real Estate CRM"
+CRM_NOTIFICATION_FALLBACK_EMAIL="admin@lafayettelouisianarealestate.com"
+BREVO_API_KEY="provider-api-key-placeholder"
 ```
 
 Production database setup:
 
 ```bash
 npm run prisma:deploy
-npm run prisma:seed
 ```
 
 `postinstall` runs `prisma generate`, so hosted builds generate Prisma Client automatically.
+
+Do not run `prisma migrate dev`, `prisma migrate reset`, or destructive seed commands against production. Production deployment and live lead-intake troubleshooting are documented in:
+
+```text
+docs/production-deployment-troubleshooting.md
+```
 
 ## Website Lead Intake
 
@@ -119,6 +144,12 @@ Required header:
 
 ```text
 x-crm-api-key: value-from-CRM_PUBLIC_API_KEY
+```
+
+Production URL:
+
+```text
+https://crm.lafayettelouisianarealestate.com/api/public/leads
 ```
 
 Supported JSON fields include:
@@ -149,25 +180,49 @@ Public intake hardening:
 - JSON payloads are capped by `CRM_PUBLIC_LEAD_MAX_BODY_BYTES`.
 - Requests are rate limited per detected client IP by `CRM_PUBLIC_LEAD_RATE_LIMIT_PER_MINUTE`.
 
-The current WordPress site has no active form plugin installed. When a form plugin or custom form is added, configure it to send a webhook to the deployed CRM URL, for example:
+Native CRM notifications:
+
+- New non-duplicate public leads trigger CRM-side email notifications when `CRM_EMAIL_FROM` and `BREVO_API_KEY` are configured.
+- Clear duplicate submissions are recorded as lead activity and do not send new-lead notifications.
+- `CRM_APP_URL` is used to include lead-detail links in notification emails.
+- If no organization recipient is found, `CRM_NOTIFICATION_FALLBACK_EMAIL` can receive fallback notifications.
+
+Live WordPress integration:
+
+- The homepage lead form posts to WordPress `admin-ajax.php`.
+- The active WordPress snippet validates the form, then sends server-side JSON to the CRM public intake endpoint.
+- The API key must stay server-side in WordPress/PHP and must not be exposed in browser JavaScript.
+- GoDaddy Managed WordPress cache should be flushed after snippet changes.
+
+Operational boundary:
+
+- WordPress is the public lead capture surface.
+- The Next.js app is the CRM backend and admin dashboard surface.
+
+Active WordPress Code Snippets:
+
+- `Homepage Funnel Hero Photo Router - Magnolia Move`, snippet ID `8`: live homepage form and CRM handoff.
+- `Lafayette CRM Lead Form Shortcode`, snippet ID `9`: `[lafayette_lead_form]` shortcode path.
+- `Lafayette CRM Demo Form Submitter`, snippet ID `10`: demo form path.
+
+See the full runbook:
 
 ```text
-https://crm.lafayettelouisianarealestate.com/api/public/leads
+docs/wordpress-lead-intake.md
 ```
 
-A WordPress Code Snippets shortcode has been created for the site:
+For production Vercel, Supabase, WordPress, API key, migration, ZIP-routing, and notification troubleshooting, see:
 
 ```text
-[lafayette_lead_form]
+docs/production-deployment-troubleshooting.md
 ```
 
-Snippet details:
+## Lead Notifications
+
+Native CRM email notifications are documented in:
 
 ```text
-Title: Lafayette CRM Lead Form Shortcode
-Snippet ID: 9
-Status: active on WordPress
-Placed on: Buy or Sell a Home in Lafayette
+docs/lead-notifications.md
 ```
 
-After the CRM is deployed at the configured public URL, test the live WordPress form end to end and confirm the lead appears in the CRM.
+Use that runbook to configure Brevo environment variables, verify live delivery, and troubleshoot notification issues without exposing secrets.

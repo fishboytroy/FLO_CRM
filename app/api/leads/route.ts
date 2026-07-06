@@ -20,6 +20,7 @@ export async function GET(request: NextRequest) {
             { lastName: { contains: q, mode: "insensitive" } },
             { email: { contains: q, mode: "insensitive" } },
             { phone: { contains: q, mode: "insensitive" } },
+            { zipCode: { contains: q, mode: "insensitive" } },
             { desiredLocation: { contains: q, mode: "insensitive" } }
           ]
         }

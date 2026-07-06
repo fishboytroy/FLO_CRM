@@ -1,11 +1,15 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { checkRateLimit, resetRateLimitForTests } from "../lib/rate-limit";
+import { leadSchema } from "../lib/validation";
 import {
   corsHeaders,
+  duplicateLeadActivityMessage,
+  duplicateLeadUpdateData,
   inferLeadType,
   isAllowedOrigin,
   normalizePublicLead,
+  normalizeZipCode,
   splitName,
   verifyApiKey
 } from "../lib/public-lead-intake";
@@ -63,12 +67,225 @@ test("lead intake catches honeypot spam without creating a normal lead payload",
   assert.equal(normalized.data.spam, true);
 });
 
+test("public lead intake accepts zipCode", () => {
+  const normalized = normalizePublicLead({
+    fullName: "Avery Thibodeaux",
+    email: "avery@example.com",
+    zipCode: "70508"
+  });
+
+  assert.equal(normalized.success, true);
+  if (!normalized.success) throw new Error("Expected normalized lead");
+  assert.equal(normalized.data.zipCode, "70508");
+});
+
+test("public lead intake accepts zip_code", () => {
+  const normalized = normalizePublicLead({
+    full_name: "Camille Broussard",
+    phone: "337-555-0144",
+    zip_code: "70501"
+  });
+
+  assert.equal(normalized.success, true);
+  if (!normalized.success) throw new Error("Expected normalized lead");
+  assert.equal(normalized.data.zipCode, "70501");
+});
+
+test("public lead intake accepts postalCode", () => {
+  const normalized = normalizePublicLead({
+    name: "Julien Landry",
+    email: "julien@example.com",
+    postalCode: "70503"
+  });
+
+  assert.equal(normalized.success, true);
+  if (!normalized.success) throw new Error("Expected normalized lead");
+  assert.equal(normalized.data.zipCode, "70503");
+});
+
+test("public lead intake normalizes ZIP+4 to five digits", () => {
+  const normalized = normalizePublicLead({
+    fullName: "Noelle Arceneaux",
+    email: "noelle@example.com",
+    propertyZipCode: "70506-1234"
+  });
+
+  assert.equal(normalized.success, true);
+  if (!normalized.success) throw new Error("Expected normalized lead");
+  assert.equal(normalized.data.zipCode, "70506");
+  assert.deepEqual(normalizeZipCode("70507-9876"), { success: true, zipCode: "70507" });
+});
+
+test("public lead intake rejects invalid ZIP values", () => {
+  const normalized = normalizePublicLead({
+    fullName: "Invalid Zip",
+    email: "invalid@example.com",
+    desired_zip_code: "Lafayette"
+  });
+
+  assert.equal(normalized.success, false);
+  if (normalized.success) throw new Error("Expected validation failure");
+  assert.equal(normalized.error, "Zip code must be a valid 5-digit ZIP or ZIP+4");
+});
+
+test("public lead intake still works without ZIP code", () => {
+  const normalized = normalizePublicLead({
+    fullName: "Marie Hebert",
+    email: "marie@example.com",
+    lookingTo: "Sell a home"
+  });
+
+  assert.equal(normalized.success, true);
+  if (!normalized.success) throw new Error("Expected normalized lead");
+  assert.equal(normalized.data.zipCode, undefined);
+});
+
+test("internal lead validation normalizes optional ZIP+4", () => {
+  const parsed = leadSchema.safeParse({
+    firstName: "Avery",
+    lastName: "Thibodeaux",
+    email: "avery@example.com",
+    leadType: "buyer",
+    status: "new_lead",
+    zipCode: "70508-1234"
+  });
+
+  assert.equal(parsed.success, true);
+  if (!parsed.success) throw new Error("Expected valid lead");
+  assert.equal(parsed.data.zipCode, "70508");
+});
+
+test("internal lead validation rejects invalid ZIP", () => {
+  const parsed = leadSchema.safeParse({
+    firstName: "Avery",
+    lastName: "Thibodeaux",
+    email: "avery@example.com",
+    leadType: "buyer",
+    status: "new_lead",
+    zipCode: "Lafayette"
+  });
+
+  assert.equal(parsed.success, false);
+  if (parsed.success) throw new Error("Expected invalid lead");
+  assert.deepEqual(parsed.error.flatten().fieldErrors.zipCode, ["Use a valid 5-digit ZIP or ZIP+4"]);
+});
+
 test("lead intake requires a first name or full name", () => {
   const normalized = normalizePublicLead({ email: "person@example.com" });
 
   assert.equal(normalized.success, false);
   if (normalized.success) throw new Error("Expected validation failure");
   assert.equal(normalized.error, "First name or full name is required");
+});
+
+test("duplicate lead updates fill only blank lead fields", () => {
+  const normalized = normalizePublicLead({
+    fullName: "Avery Thibodeaux",
+    email: "avery@example.com",
+    phone: "337-555-0202",
+    source: "Homepage buyer seller form",
+    desiredLocation: "Lafayette, LA",
+    budgetMin: "300000",
+    budgetMax: "450000",
+    lookingTo: "Buy a home",
+    timeframe: "ASAP",
+    message: "New duplicate submission context."
+  });
+
+  assert.equal(normalized.success, true);
+  if (!normalized.success) throw new Error("Expected normalized lead");
+
+  assert.deepEqual(
+    duplicateLeadUpdateData(
+      {
+        email: "existing@example.com",
+        phone: null,
+        source: "Original source",
+        budgetMin: null,
+        budgetMax: 500000,
+        desiredLocation: null,
+        zipCode: null,
+        propertyInterest: null,
+        timeframe: "Next 90 days",
+        notes: null
+      },
+      normalized.data
+    ),
+    {
+      phone: "337-555-0202",
+      budgetMin: 300000,
+      desiredLocation: "Lafayette, LA",
+      propertyInterest: "Buy a home",
+      notes: "New duplicate submission context."
+    }
+  );
+});
+
+test("duplicate lead updates persist zipCode only when existing lead is blank", () => {
+  const normalized = normalizePublicLead({
+    fullName: "Avery Thibodeaux",
+    email: "avery@example.com",
+    zipCode: "70508"
+  });
+
+  assert.equal(normalized.success, true);
+  if (!normalized.success) throw new Error("Expected normalized lead");
+
+  const blankZipUpdate = duplicateLeadUpdateData(
+    {
+      email: "avery@example.com",
+      phone: null,
+      source: null,
+      budgetMin: null,
+      budgetMax: null,
+      desiredLocation: null,
+      zipCode: null,
+      propertyInterest: null,
+      timeframe: null,
+      notes: null
+    },
+    normalized.data
+  );
+  assert.equal(blankZipUpdate.zipCode, "70508");
+
+  const existingZipUpdate = duplicateLeadUpdateData(
+    {
+      email: "avery@example.com",
+      phone: null,
+      source: null,
+      budgetMin: null,
+      budgetMax: null,
+      desiredLocation: null,
+      zipCode: "70501",
+      propertyInterest: null,
+      timeframe: null,
+      notes: null
+    },
+    normalized.data
+  );
+  assert.equal("zipCode" in existingZipUpdate, false);
+});
+
+test("duplicate lead activity captures new submission context", () => {
+  const normalized = normalizePublicLead({
+    fullName: "Avery Thibodeaux",
+    email: "avery@example.com",
+    phone: "337-555-0202",
+    source: "Homepage buyer seller form",
+    lookingTo: "Buy a home",
+    timeframe: "ASAP",
+    message: "Still interested after seeing a new listing."
+  });
+
+  assert.equal(normalized.success, true);
+  if (!normalized.success) throw new Error("Expected normalized lead");
+
+  const message = duplicateLeadActivityMessage(normalized.data, "email and phone");
+  assert.match(message, /Duplicate public lead submission received from Homepage buyer seller form/);
+  assert.match(message, /Matched by: email and phone/);
+  assert.match(message, /Email: avery@example.com/);
+  assert.match(message, /Phone: 337-555-0202/);
+  assert.match(message, /New context:/);
 });
 
 test("name and lead type helpers cover common website inputs", () => {

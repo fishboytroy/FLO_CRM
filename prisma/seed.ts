@@ -8,7 +8,8 @@ import {
   OrganizationPlan,
   OrganizationStatus,
   SubscriptionStatus,
-  MembershipRole
+  MembershipRole,
+  OrganizationZipCodeStatus
 } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import { assertSeedCanRun } from "../lib/seed-safety";
@@ -136,6 +137,29 @@ async function main() {
     update: { role: MembershipRole.owner },
     create: { userId: teamOwner.id, organizationId: teamOrg.id, role: MembershipRole.owner }
   });
+
+  const sampleTerritoryZips = ["70501", "70503", "70506", "70508", "70592"];
+  for (const zipCode of sampleTerritoryZips) {
+    const existingActiveTerritory = await prisma.organizationZipCode.findFirst({
+      where: {
+        organizationId: internalOrg.id,
+        zipCode,
+        exclusive: true,
+        status: { in: [OrganizationZipCodeStatus.active, OrganizationZipCodeStatus.trialing] }
+      }
+    });
+
+    if (!existingActiveTerritory) {
+      await prisma.organizationZipCode.create({
+        data: {
+          organizationId: internalOrg.id,
+          zipCode,
+          status: OrganizationZipCodeStatus.active,
+          exclusive: true
+        }
+      });
+    }
+  }
 
   const leads = [
     {

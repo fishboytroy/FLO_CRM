@@ -40,7 +40,7 @@ export function TaskForm({ lead, users }: { lead: { id: string }; users: UserOpt
           ))}
         </select>
       </div>
-      <Button disabled={saving}>{saving ? "Creating..." : "Create task"}</Button>
+      <Button className="w-full sm:w-auto" disabled={saving}>{saving ? "Creating..." : "Create task"}</Button>
     </form>
   );
 }
@@ -57,7 +57,7 @@ export function CompleteTaskButton({ id }: { id: string }) {
   }
 
   return (
-    <Button variant="secondary" onClick={complete} disabled={saving}>
+    <Button className="w-full sm:w-auto" variant="secondary" onClick={complete} disabled={saving}>
       {saving ? "Saving..." : "Mark complete"}
     </Button>
   );

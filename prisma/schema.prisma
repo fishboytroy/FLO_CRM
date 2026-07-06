@@ -49,6 +49,22 @@ enum LeadDistributionStatus {
   expired
 }
 
+enum OrganizationZipCodeStatus {
+  active
+  trialing
+  expired
+  canceled
+}
+
+enum LeadAssignmentReason {
+  zip_match
+  manual_assignment
+  reassignment
+  expired_zip
+  admin_override
+  unpurchased_zip
+}
+
 enum LeadType {
   buyer
   seller
@@ -94,12 +110,15 @@ model User {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
-  accounts      Account[]
-  sessions      Session[]
-  memberships   Membership[]
-  assignedLeads Lead[]       @relation("AssignedAgent")
-  tasks         Task[]       @relation("AssignedTasks")
-  activities    Activity[]
+  accounts                   Account[]
+  sessions                   Session[]
+  memberships                Membership[]
+  assignedLeads              Lead[]                  @relation("AssignedAgent")
+  tasks                      Task[]                  @relation("AssignedTasks")
+  activities                 Activity[]
+  assignmentFromHistories    LeadAssignmentHistory[] @relation("LeadAssignmentFromUser")
+  assignmentToHistories      LeadAssignmentHistory[] @relation("LeadAssignmentToUser")
+  assignmentCreatedHistories LeadAssignmentHistory[] @relation("LeadAssignmentCreatedBy")
 }
 
 model Organization {
@@ -115,12 +134,33 @@ model Organization {
   createdAt            DateTime           @default(now())
   updatedAt            DateTime           @updatedAt
 
-  memberships Membership[]
-  leads       Lead[]
-  tasks       Task[]
-  activities  Activity[]
+  memberships             Membership[]
+  leads                   Lead[]
+  tasks                   Task[]
+  activities              Activity[]
+  zipCodes                OrganizationZipCode[]
+  assignmentFromHistories LeadAssignmentHistory[] @relation("LeadAssignmentFromOrganization")
+  assignmentToHistories   LeadAssignmentHistory[] @relation("LeadAssignmentToOrganization")
 
   @@index([plan])
+  @@index([status])
+}
+
+model OrganizationZipCode {
+  id             String                    @id @default(cuid())
+  organizationId String
+  zipCode        String
+  status         OrganizationZipCodeStatus @default(active)
+  exclusive      Boolean                   @default(true)
+  startsAt       DateTime                  @default(now())
+  expiresAt      DateTime?
+  createdAt      DateTime                  @default(now())
+  updatedAt      DateTime                  @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@index([zipCode])
   @@index([status])
 }
 
@@ -195,6 +235,7 @@ model Lead {
   exclusiveUntil     DateTime?
   leadPriceCents     Int?
   marketArea         String?
+  zipCode            String?
   budgetMin          Int?
   budgetMax          Int?
   desiredLocation    String?
@@ -204,18 +245,48 @@ model Lead {
   createdAt          DateTime               @default(now())
   updatedAt          DateTime               @updatedAt
 
-  organization  Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  assignedAgent User?        @relation("AssignedAgent", fields: [assignedAgentId], references: [id], onDelete: SetNull)
-  tasks         Task[]
-  activities    Activity[]
+  organization      Organization            @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  assignedAgent     User?                   @relation("AssignedAgent", fields: [assignedAgentId], references: [id], onDelete: SetNull)
+  tasks             Task[]
+  activities        Activity[]
+  assignmentHistory LeadAssignmentHistory[]
 
   @@index([status])
   @@index([organizationId])
   @@index([leadType])
   @@index([distributionStatus])
   @@index([marketArea])
+  @@index([zipCode])
+  @@index([organizationId, zipCode])
   @@index([source])
   @@index([assignedAgentId])
+  @@index([createdAt])
+}
+
+model LeadAssignmentHistory {
+  id                 String               @id @default(cuid())
+  leadId             String
+  fromOrganizationId String?
+  toOrganizationId   String?
+  fromUserId         String?
+  toUserId           String?
+  zipCode            String?
+  reason             LeadAssignmentReason
+  message            String?
+  createdByUserId    String?
+  createdAt          DateTime             @default(now())
+
+  lead             Lead          @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  fromOrganization Organization? @relation("LeadAssignmentFromOrganization", fields: [fromOrganizationId], references: [id], onDelete: SetNull)
+  toOrganization   Organization? @relation("LeadAssignmentToOrganization", fields: [toOrganizationId], references: [id], onDelete: SetNull)
+  fromUser         User?         @relation("LeadAssignmentFromUser", fields: [fromUserId], references: [id], onDelete: SetNull)
+  toUser           User?         @relation("LeadAssignmentToUser", fields: [toUserId], references: [id], onDelete: SetNull)
+  createdByUser    User?         @relation("LeadAssignmentCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull)
+
+  @@index([leadId])
+  @@index([zipCode])
+  @@index([toOrganizationId])
+  @@index([toUserId])
   @@index([createdAt])
 }
 

@@ -25,6 +25,7 @@ export type LeadFormValue = {
   budgetMin?: number | null;
   budgetMax?: number | null;
   desiredLocation?: string | null;
+  zipCode?: string | null;
   propertyInterest?: string | null;
   timeframe?: string | null;
   notes?: string | null;
@@ -46,7 +47,9 @@ export function LeadForm({ agents, lead }: { agents: UserOption[]; lead?: LeadFo
     });
     setSaving(false);
     if (!response.ok) {
-      setError("Please check the lead details and try again.");
+      const data = await response.json().catch(() => null);
+      const zipErrors = data?.error?.fieldErrors?.zipCode;
+      setError(zipErrors?.[0] ?? "Please check the lead details and try again.");
       return;
     }
     const data = await response.json();
@@ -57,7 +60,7 @@ export function LeadForm({ agents, lead }: { agents: UserOption[]; lead?: LeadFo
   return (
     <form action={onSubmit} className="space-y-6">
       {error ? <p className="rounded-md bg-red-50 p-3 text-sm text-red-700">{error}</p> : null}
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-4 sm:grid-cols-2">
         <Field label="First name" name="firstName" defaultValue={lead?.firstName} required />
         <Field label="Last name" name="lastName" defaultValue={lead?.lastName} required />
         <Field label="Email" name="email" type="email" defaultValue={lead?.email ?? ""} />
@@ -79,6 +82,7 @@ export function LeadForm({ agents, lead }: { agents: UserOption[]; lead?: LeadFo
         <Field label="Budget min" name="budgetMin" type="number" defaultValue={lead?.budgetMin ?? ""} />
         <Field label="Budget max" name="budgetMax" type="number" defaultValue={lead?.budgetMax ?? ""} />
         <Field label="Desired location" name="desiredLocation" defaultValue={lead?.desiredLocation ?? ""} />
+        <Field label="Allocation ZIP" name="zipCode" defaultValue={lead?.zipCode ?? ""} placeholder="70508" />
         <Field label="Property interest" name="propertyInterest" defaultValue={lead?.propertyInterest ?? ""} />
         <Field label="Timeframe" name="timeframe" defaultValue={lead?.timeframe ?? ""} />
       </div>
@@ -86,7 +90,7 @@ export function LeadForm({ agents, lead }: { agents: UserOption[]; lead?: LeadFo
         <label htmlFor="notes">Internal notes</label>
         <textarea id="notes" name="notes" rows={5} defaultValue={lead?.notes ?? ""} />
       </div>
-      <Button disabled={saving}>{saving ? "Saving..." : lead?.id ? "Update lead" : "Create lead"}</Button>
+      <Button className="w-full sm:w-auto" disabled={saving}>{saving ? "Saving..." : lead?.id ? "Update lead" : "Create lead"}</Button>
     </form>
   );
 }

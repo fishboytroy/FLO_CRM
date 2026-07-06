@@ -30,30 +30,30 @@ export default async function TasksPage({ searchParams }: { searchParams?: Promi
     <div className="space-y-6">
       <div>
         <p className="text-sm font-semibold uppercase tracking-[0.18em] text-bayou-600">{activeOrg.name}</p>
-        <h2 className="mt-2 text-3xl font-bold text-slate-900">Follow-ups and reminders</h2>
+        <h2 className="mt-2 text-2xl font-bold text-slate-900 sm:text-3xl">Follow-ups and reminders</h2>
       </div>
-      <div className="flex gap-2">
+      <div className="grid gap-2 sm:flex">
         {["all", "today", "overdue"].map((item) => (
-          <Link key={item} href={`/dashboard/tasks?view=${item}`} className={`rounded-md px-4 py-2 text-sm font-semibold ${view === item ? "bg-cypress text-white" : "bg-white text-slate-700"}`}>
+          <Link key={item} href={`/dashboard/tasks?view=${item}`} prefetch={false} className={`inline-flex min-h-11 items-center justify-center rounded-md px-4 py-2 text-sm font-semibold ${view === item ? "bg-cypress text-white" : "bg-white text-slate-700"}`}>
             {item[0].toUpperCase() + item.slice(1)}
           </Link>
         ))}
       </div>
-      <Card className="p-6">
+      <Card className="p-4 sm:p-6">
         {tasks.length ? (
           <div className="space-y-3">
             {tasks.map((task) => (
-              <div key={task.id} className="flex flex-wrap items-center justify-between gap-4 rounded-md border border-slate-200 p-4">
-                <div>
-                  <Link href={`/dashboard/leads/${task.leadId}`} className="font-bold text-slate-900 hover:text-bayou-700">
+              <div key={task.id} className="grid gap-4 rounded-md border border-slate-200 p-4 lg:flex lg:items-center lg:justify-between">
+                <div className="min-w-0">
+                  <Link href={`/dashboard/leads/${task.leadId}`} prefetch={false} className="font-bold text-slate-900 hover:text-bayou-700">
                     {task.title}
                   </Link>
-                  <p className="mt-1 text-sm text-slate-500">
+                  <p className="mt-1 text-sm text-slate-500 break-words">
                     {task.lead.firstName} {task.lead.lastName} - due {format(task.dueDate, "MMM d, yyyy h:mm a")}
                   </p>
-                  {task.description ? <p className="mt-2 text-sm text-slate-600">{task.description}</p> : null}
+                  {task.description ? <p className="mt-2 break-words text-sm text-slate-600">{task.description}</p> : null}
                 </div>
-                <div className="flex items-center gap-3">
+                <div className="grid gap-3 sm:flex sm:items-center">
                   <Badge tone={task.status === "completed" ? "green" : task.dueDate < now ? "red" : "gold"}>{task.status}</Badge>
                   {task.status === "pending" ? <CompleteTaskButton id={task.id} /> : null}
                 </div>
