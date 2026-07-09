@@ -128,6 +128,38 @@ export function AddOrganizationMemberForm({ organizationId }: { organizationId: 
   );
 }
 
+export function SendMemberInviteButton({ organizationId, userId }: { organizationId: string; userId: string }) {
+  const router = useRouter();
+  const [error, setError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  async function onClick() {
+    setError(null);
+    setSaving(true);
+    try {
+      const response = await fetch(`/api/platform/organizations/${organizationId}/members/${userId}/invite`, { method: "POST" });
+      if (!response.ok) {
+        const data = await response.json().catch(() => null);
+        throw new Error(data?.error ?? "Could not send invite.");
+      }
+      router.refresh();
+    } catch (error) {
+      setError(error instanceof Error ? error.message : "Could not send invite.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className="space-y-2">
+      <Button type="button" variant="secondary" onClick={onClick} disabled={saving}>
+        {saving ? "Sending..." : "Send invite"}
+      </Button>
+      <FormError error={error} />
+    </div>
+  );
+}
+
 type TerritoryMemberOption = {
   userId: string;
   role: MembershipRole;

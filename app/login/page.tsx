@@ -18,9 +18,10 @@ async function loginAction(formData: FormData) {
   }
 }
 
-export default async function LoginPage({ searchParams }: { searchParams?: Promise<{ error?: string }> }) {
+export default async function LoginPage({ searchParams }: { searchParams?: Promise<{ error?: string; onboarding?: string }> }) {
   const params = await searchParams;
   const hasError = params?.error;
+  const onboardingComplete = params?.onboarding === "complete";
   return (
     <main className="relative grid min-h-screen grid-cols-1 overflow-hidden bg-obsidian-950 text-slate-100 lg:grid-cols-[1fr_520px]">
       <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(8,17,22,0.86),rgba(5,9,13,0.98)),url('/ai-command-center.png')] bg-cover bg-center opacity-80" />
@@ -44,6 +45,7 @@ export default async function LoginPage({ searchParams }: { searchParams?: Promi
         <form action={loginAction} className="w-full max-w-md rounded-lg border border-white/10 bg-obsidian-900/80 p-8 shadow-glass backdrop-blur-xl">
           <p className="text-sm font-semibold uppercase tracking-[0.2em] text-aqua-100">CRM Login</p>
           <h2 className="mt-3 text-3xl font-bold text-white">Welcome back</h2>
+          {onboardingComplete ? <p className="mt-4 rounded-md border border-aqua-400/30 bg-aqua-400/10 p-3 text-sm text-aqua-100">Password saved. Sign in with your email and new password.</p> : null}
           {hasError ? <p className="mt-4 rounded-md border border-red-400/30 bg-red-500/10 p-3 text-sm text-red-100">Invalid email or password.</p> : null}
           <div className="mt-8 space-y-4">
             <div className="grid gap-2">
@@ -52,7 +54,7 @@ export default async function LoginPage({ searchParams }: { searchParams?: Promi
             </div>
             <div className="grid gap-2">
               <label htmlFor="password">Password</label>
-              <input id="password" name="password" type="password" required placeholder="Password123!" />
+              <input id="password" name="password" type="password" required placeholder="Enter your password" />
             </div>
           </div>
           <button className="mt-6 w-full rounded-md bg-aqua-400 px-4 py-3 text-sm font-bold text-obsidian-950 shadow-glow hover:bg-aqua-300">Sign in</button>

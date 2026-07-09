@@ -5,7 +5,8 @@ import {
   AddOrganizationMemberForm,
   AssignOrganizationTerritoryForm,
   CreateOrganizationForm,
-  DeleteOrganizationButton
+  DeleteOrganizationButton,
+  SendMemberInviteButton
 } from "@/components/platform-organization-controls";
 import { Badge, Card, EmptyState } from "@/components/ui";
 import { INTERNAL_ORG_ID } from "@/lib/access";
@@ -31,6 +32,11 @@ export default async function PlatformOrganizationsPage() {
       memberships: {
         orderBy: [{ role: "asc" }, { user: { email: "asc" } }],
         include: { user: true }
+      },
+      memberInvites: {
+        where: { acceptedAt: null, expiresAt: { gt: new Date() } },
+        orderBy: { createdAt: "desc" },
+        select: { userId: true, expiresAt: true }
       },
       zipCodes: {
         orderBy: [{ status: "asc" }, { zipCode: "asc" }],
@@ -126,18 +132,32 @@ export default async function PlatformOrganizationsPage() {
                           <tr>
                             <th className="px-3 py-2">User</th>
                             <th className="px-3 py-2">Role</th>
+                            <th className="px-3 py-2">Access</th>
+                            <th className="px-3 py-2">Invite</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-white/10 text-slate-300">
-                          {organization.memberships.map((membership) => (
-                            <tr key={membership.id}>
-                              <td className="px-3 py-3">
-                                <p className="font-semibold text-white">{membership.user.name ?? "Unnamed user"}</p>
-                                <p className="break-all text-xs text-slate-500">{membership.user.email}</p>
-                              </td>
-                              <td className="px-3 py-3"><Badge>{membership.role}</Badge></td>
-                            </tr>
-                          ))}
+                          {organization.memberships.map((membership) => {
+                            const pendingInvite = organization.memberInvites.find((invite) => invite.userId === membership.userId);
+                            return (
+                              <tr key={membership.id}>
+                                <td className="px-3 py-3">
+                                  <p className="font-semibold text-white">{membership.user.name ?? "Unnamed user"}</p>
+                                  <p className="break-all text-xs text-slate-500">{membership.user.email}</p>
+                                </td>
+                                <td className="px-3 py-3"><Badge>{membership.role}</Badge></td>
+                                <td className="px-3 py-3">
+                                  <div className="flex flex-col gap-2">
+                                    <Badge tone={membership.user.passwordHash ? "green" : "gold"}>{membership.user.passwordHash ? "Password set" : "Needs password"}</Badge>
+                                    {pendingInvite ? <span className="text-xs text-slate-500">Invite expires {format(pendingInvite.expiresAt, "MMM d, h:mm a")}</span> : null}
+                                  </div>
+                                </td>
+                                <td className="px-3 py-3">
+                                  <SendMemberInviteButton organizationId={organization.id} userId={membership.userId} />
+                                </td>
+                              </tr>
+                            );
+                          })}
                         </tbody>
                       </table>
                     </div>

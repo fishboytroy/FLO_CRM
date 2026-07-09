@@ -120,6 +120,7 @@ model User {
   assignmentToHistories      LeadAssignmentHistory[] @relation("LeadAssignmentToUser")
   assignmentCreatedHistories LeadAssignmentHistory[] @relation("LeadAssignmentCreatedBy")
   assignedZipCodes           OrganizationZipCode[]   @relation("AssignedTerritoryAgent")
+  memberInvites              MemberInvite[]
 }
 
 model Organization {
@@ -142,9 +143,31 @@ model Organization {
   zipCodes                OrganizationZipCode[]
   assignmentFromHistories LeadAssignmentHistory[] @relation("LeadAssignmentFromOrganization")
   assignmentToHistories   LeadAssignmentHistory[] @relation("LeadAssignmentToOrganization")
+  memberInvites           MemberInvite[]
 
   @@index([plan])
   @@index([status])
+}
+
+model MemberInvite {
+  id             String    @id @default(cuid())
+  tokenHash      String    @unique
+  userId         String
+  organizationId String
+  email          String
+  role           MembershipRole
+  expiresAt      DateTime
+  acceptedAt     DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([organizationId])
+  @@index([email])
+  @@index([expiresAt])
 }
 
 model OrganizationZipCode {

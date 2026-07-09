@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Role } from "@prisma/client";
 import { auth } from "@/auth";
+import { createMemberInvite, sendMemberInviteEmail } from "@/lib/member-invites";
 import { isPlatformAdminRole, normalizePlatformEmail, parsePlatformMembershipRole } from "@/lib/platform-admin";
 import { prisma } from "@/lib/prisma";
 
@@ -10,7 +11,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   if (!isPlatformAdminRole(session.user.role)) return NextResponse.json({ error: "Platform admin access required" }, { status: 403 });
 
   const { id } = await params;
-  const organization = await prisma.organization.findUnique({ where: { id }, select: { id: true } });
+  const organization = await prisma.organization.findUnique({ where: { id }, select: { id: true, name: true } });
   if (!organization) return NextResponse.json({ error: "Organization not found" }, { status: 404 });
 
   const body = await request.json().catch(() => null);
@@ -46,5 +47,19 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     include: { user: true }
   });
 
-  return NextResponse.json({ membership }, { status: 201 });
+  const { invite, inviteUrl } = await createMemberInvite(prisma, {
+    userId: user.id,
+    organizationId: organization.id,
+    email: user.email,
+    role: role.role
+  });
+  const inviteEmail = await sendMemberInviteEmail({
+    to: { email: user.email, name: user.name },
+    organizationName: organization.name,
+    role: role.role,
+    inviteUrl,
+    expiresAt: invite.expiresAt
+  });
+
+  return NextResponse.json({ membership, inviteEmail }, { status: 201 });
 }
