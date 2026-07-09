@@ -59,7 +59,7 @@ export function LeadForm({ agents, lead }: { agents: UserOption[]; lead?: LeadFo
 
   return (
     <form action={onSubmit} className="space-y-6">
-      {error ? <p className="rounded-md bg-red-50 p-3 text-sm text-red-700">{error}</p> : null}
+      {error ? <p className="rounded-md border border-red-400/30 bg-red-500/10 p-3 text-sm text-red-100">{error}</p> : null}
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label="First name" name="firstName" defaultValue={lead?.firstName} required />
         <Field label="Last name" name="lastName" defaultValue={lead?.lastName} required />

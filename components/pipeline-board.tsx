@@ -25,19 +25,19 @@ export function PipelineBoard({ leads }: { leads: PipelineLead[] }) {
       {pipelineStages.map((stage) => {
         const stageLeads = leads.filter((lead) => lead.status === stage.value);
         return (
-          <section key={stage.value} className="min-w-0 rounded-lg border border-slate-200 bg-white/60 p-3">
+          <section key={stage.value} className="min-w-0 rounded-lg border border-white/10 bg-obsidian-950/55 p-3 shadow-glass backdrop-blur-xl">
             <div className="mb-3 flex items-center justify-between">
-              <h3 className="text-sm font-bold text-slate-800">{stage.label}</h3>
+              <h3 className="text-sm font-bold text-white">{stage.label}</h3>
               <Badge>{stageLeads.length}</Badge>
             </div>
             <div className="space-y-3">
               {stageLeads.map((lead) => (
                 <Card key={lead.id} className="p-4">
-                  <Link href={`/dashboard/leads/${lead.id}`} prefetch={false} className="break-words font-bold text-slate-900 hover:text-bayou-700">
+                  <Link href={`/dashboard/leads/${lead.id}`} prefetch={false} className="break-words font-bold text-white hover:text-aqua-100">
                     {lead.firstName} {lead.lastName}
                   </Link>
                   <p className="mt-1 break-words text-xs text-slate-500">{lead.desiredLocation ?? "Location not set"}</p>
-                  <p className="mt-3 text-sm text-slate-700">
+                  <p className="mt-3 text-sm text-slate-300">
                     {money(lead.budgetMin)} - {money(lead.budgetMax)}
                   </p>
                   <p className="mt-2 text-xs text-slate-500">{lead.assignedAgent?.name ?? "Unassigned"}</p>

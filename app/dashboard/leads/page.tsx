@@ -41,14 +41,14 @@ export default async function LeadsPage({ searchParams }: { searchParams?: Promi
     <div className="space-y-6">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div className="min-w-0">
-          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-bayou-600">{activeOrg.name}</p>
-          <h2 className="mt-2 text-2xl font-bold text-slate-900 sm:text-3xl">Contacts and opportunities</h2>
+          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-aqua-100">{activeOrg.name}</p>
+          <h2 className="mt-2 text-2xl font-bold text-white sm:text-3xl">Contacts and opportunities</h2>
         </div>
         <div className="grid gap-2 sm:flex">
-          <Link href="/dashboard/leads/review" prefetch={false} className="inline-flex min-h-11 items-center justify-center rounded-md border border-amber-200 bg-amber-50 px-4 py-2 text-sm font-semibold text-amber-800 hover:bg-amber-100">
+          <Link href="/dashboard/leads/review" prefetch={false} className="inline-flex min-h-11 items-center justify-center rounded-md border border-gold/30 bg-gold/10 px-4 py-2 text-sm font-semibold text-amber-100 hover:bg-gold/15">
             Manual Review
           </Link>
-          <Link href="/dashboard/leads/new" prefetch={false} className="inline-flex min-h-11 items-center justify-center rounded-md bg-bayou-600 px-4 py-2 text-sm font-semibold text-white hover:bg-bayou-700">
+          <Link href="/dashboard/leads/new" prefetch={false} className="inline-flex min-h-11 items-center justify-center rounded-md bg-aqua-400 px-4 py-2 text-sm font-semibold text-obsidian-950 shadow-glow hover:bg-aqua-300">
             New Lead
           </Link>
         </div>
@@ -91,7 +91,7 @@ export default async function LeadsPage({ searchParams }: { searchParams?: Promi
               ) : null
             )}
           </select>
-          <button className="min-h-11 rounded-md bg-cypress px-4 py-2 text-sm font-semibold text-white">Filter</button>
+          <button className="min-h-11 rounded-md bg-aqua-400 px-4 py-2 text-sm font-semibold text-obsidian-950 shadow-glow hover:bg-aqua-300">Filter</button>
         </form>
       </Card>
 
@@ -100,43 +100,43 @@ export default async function LeadsPage({ searchParams }: { searchParams?: Promi
           <>
             <div className="grid gap-3 p-4 md:hidden">
               {leads.map((lead) => (
-                <Link key={lead.id} href={`/dashboard/leads/${lead.id}`} prefetch={false} className="block rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+                <Link key={lead.id} href={`/dashboard/leads/${lead.id}`} prefetch={false} className="block rounded-lg border border-white/10 bg-obsidian-950/50 p-4 shadow-glass">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
-                      <p className="truncate font-bold text-slate-900">
+                      <p className="truncate font-bold text-white">
                         {lead.firstName} {lead.lastName}
                       </p>
                       <p className="mt-1 break-words text-xs text-slate-500">{lead.email ?? lead.phone ?? "No contact info"}</p>
                     </div>
                     <Badge tone="green">{labelFor(leadTypes, lead.leadType)}</Badge>
                   </div>
-                  <div className="mt-4 grid gap-3 text-sm text-slate-600">
+                  <div className="mt-4 grid gap-3 text-sm text-slate-300">
                     <div className="flex items-center justify-between gap-3">
                       <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">Stage</span>
-                      <span className="text-right font-semibold text-slate-800">{labelFor(pipelineStages, lead.status)}</span>
+                      <span className="text-right font-semibold text-slate-100">{labelFor(pipelineStages, lead.status)}</span>
                     </div>
                     <div className="flex items-center justify-between gap-3">
                       <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">ZIP</span>
-                      <span className="font-semibold text-slate-800">{lead.zipCode ?? "No ZIP"}</span>
+                      <span className="font-semibold text-slate-100">{lead.zipCode ?? "No ZIP"}</span>
                     </div>
                     <div>
                       <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Source</p>
-                      <p className="mt-1 break-words text-slate-700">{lead.source ?? "No source"}</p>
+                      <p className="mt-1 break-words text-slate-300">{lead.source ?? "No source"}</p>
                     </div>
                     <div className="flex items-center justify-between gap-3">
                       <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">Created</span>
-                      <span className="font-semibold text-slate-800">{format(lead.createdAt, "MMM d, yyyy")}</span>
+                      <span className="font-semibold text-slate-100">{format(lead.createdAt, "MMM d, yyyy")}</span>
                     </div>
                     <div className="flex items-center justify-between gap-3">
                       <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">Agent</span>
-                      <span className="text-right font-semibold text-slate-800">{lead.assignedAgent?.name ?? "Unassigned"}</span>
+                      <span className="text-right font-semibold text-slate-100">{lead.assignedAgent?.name ?? "Unassigned"}</span>
                     </div>
                   </div>
                 </Link>
               ))}
             </div>
             <table className="hidden w-full text-left text-sm md:table">
-              <thead className="bg-slate-100 text-xs uppercase tracking-wide text-slate-500">
+              <thead className="bg-white/5 text-xs uppercase tracking-wide text-slate-400">
                 <tr>
                   <th className="px-4 py-3">Lead</th>
                   <th className="px-4 py-3">Type</th>
@@ -147,11 +147,11 @@ export default async function LeadsPage({ searchParams }: { searchParams?: Promi
                   <th className="px-4 py-3">Open tasks</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-white/10 text-slate-300">
                 {leads.map((lead) => (
-                  <tr key={lead.id} className="hover:bg-slate-50">
+                  <tr key={lead.id} className="hover:bg-white/5">
                     <td className="px-4 py-4">
-                      <Link href={`/dashboard/leads/${lead.id}`} prefetch={false} className="font-bold text-slate-900 hover:text-bayou-700">
+                      <Link href={`/dashboard/leads/${lead.id}`} prefetch={false} className="font-bold text-white hover:text-aqua-100">
                         {lead.firstName} {lead.lastName}
                       </Link>
                       <p className="text-xs text-slate-500">{lead.email ?? lead.phone ?? "No contact info"}</p>

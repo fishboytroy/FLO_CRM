@@ -20,7 +20,7 @@ async function postJson(url: string, formData: FormData) {
 
 function FormError({ error }: { error: string | null }) {
   if (!error) return null;
-  return <p className="rounded-md bg-red-50 p-3 text-sm font-semibold text-red-700">{error}</p>;
+  return <p className="rounded-md border border-red-400/30 bg-red-500/10 p-3 text-sm font-semibold text-red-100">{error}</p>;
 }
 
 export function CreateOrganizationForm() {

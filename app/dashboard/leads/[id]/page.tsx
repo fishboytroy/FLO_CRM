@@ -53,8 +53,8 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
     <div className="space-y-6">
       <div className="grid gap-4 sm:flex sm:items-start sm:justify-between">
         <div className="min-w-0">
-          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-bayou-600">Lead Detail</p>
-          <h2 className="mt-2 break-words text-2xl font-bold text-slate-900 sm:text-3xl">
+          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-aqua-100">Lead Detail</p>
+          <h2 className="mt-2 break-words text-2xl font-bold text-white sm:text-3xl">
             {lead.firstName} {lead.lastName}
           </h2>
           <div className="mt-3 flex flex-wrap gap-2">
@@ -70,9 +70,9 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
       <section className="grid gap-6 xl:grid-cols-[1fr_420px]">
         <div className="space-y-6">
           <Card className="p-4 sm:p-6">
-            <h3 className="text-lg font-bold">Lead profile</h3>
+            <h3 className="text-lg font-bold text-white">Lead profile</h3>
             {reviewAssignment ? (
-              <div className="mt-4 rounded-md border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+              <div className="mt-4 rounded-md border border-gold/30 bg-gold/10 p-4 text-sm text-amber-100">
                 <p className="font-bold">Needs Manual Review</p>
                 <p className="mt-1">{reviewAssignment.message ?? reviewReasonLabel(reviewAssignment)}</p>
               </div>
@@ -89,11 +89,11 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
               <Info label="Created" value={format(lead.createdAt, "MMM d, yyyy")} />
               <Info label="Updated" value={format(lead.updatedAt, "MMM d, yyyy")} />
             </dl>
-            {lead.notes ? <p className="mt-5 break-words rounded-md bg-slate-50 p-4 text-sm text-slate-700">{lead.notes}</p> : null}
+            {lead.notes ? <p className="mt-5 break-words rounded-md border border-white/10 bg-white/5 p-4 text-sm text-slate-300">{lead.notes}</p> : null}
           </Card>
 
           <Card className="p-4 sm:p-6">
-            <h3 className="text-lg font-bold">Edit lead</h3>
+            <h3 className="text-lg font-bold text-white">Edit lead</h3>
             <div className="mt-5">
               <LeadForm agents={userOptions} lead={leadFormValue} />
             </div>
@@ -102,25 +102,25 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
 
         <aside className="space-y-6">
           <Card className="p-4 sm:p-6">
-            <h3 className="text-lg font-bold">Add internal note</h3>
+            <h3 className="text-lg font-bold text-white">Add internal note</h3>
             <div className="mt-4">
               <NoteForm leadId={lead.id} />
             </div>
           </Card>
 
           <Card className="p-4 sm:p-6">
-            <h3 className="text-lg font-bold">Tasks</h3>
+            <h3 className="text-lg font-bold text-white">Tasks</h3>
             <div className="mt-4">
               <TaskForm lead={{ id: lead.id }} users={userOptions} />
             </div>
             <div className="mt-6 space-y-3">
               {lead.tasks.map((task) => (
-                <div key={task.id} className="rounded-md border border-slate-200 p-3">
+                <div key={task.id} className="rounded-md border border-white/10 bg-obsidian-950/40 p-3">
                   <div className="grid gap-3 sm:flex sm:items-start sm:justify-between">
                     <div className="min-w-0">
-                      <p className="break-words font-semibold">{task.title}</p>
+                      <p className="break-words font-semibold text-white">{task.title}</p>
                       <p className="text-xs text-slate-500">Due {format(task.dueDate, "MMM d, yyyy h:mm a")}</p>
-                      {task.description ? <p className="mt-2 break-words text-sm text-slate-600">{task.description}</p> : null}
+                      {task.description ? <p className="mt-2 break-words text-sm text-slate-300">{task.description}</p> : null}
                     </div>
                     <Badge tone={task.status === "completed" ? "green" : "gold"}>{task.status}</Badge>
                   </div>
@@ -131,11 +131,11 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
           </Card>
 
           <Card className="p-4 sm:p-6">
-            <h3 className="text-lg font-bold">Activity timeline</h3>
+            <h3 className="text-lg font-bold text-white">Activity timeline</h3>
             <div className="mt-5 space-y-4">
               {lead.activities.map((activity) => (
-                <div key={activity.id} className="border-l-2 border-bayou-100 pl-4">
-                  <p className="break-words text-sm font-semibold text-slate-900">{activity.message}</p>
+                <div key={activity.id} className="border-l-2 border-aqua-400/35 pl-4">
+                  <p className="break-words text-sm font-semibold text-slate-100">{activity.message}</p>
                   <p className="mt-1 text-xs text-slate-500">
                     {activity.user?.name ?? "System"} - {format(activity.createdAt, "MMM d, yyyy h:mm a")}
                   </p>
@@ -153,7 +153,7 @@ function Info({ label, value }: { label: string; value: string }) {
   return (
     <div>
       <dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">{label}</dt>
-      <dd className="mt-1 break-words text-sm font-semibold text-slate-900">{value}</dd>
+      <dd className="mt-1 break-words text-sm font-semibold text-white">{value}</dd>
     </div>
   );
 }

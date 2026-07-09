@@ -15,8 +15,8 @@ export default async function PipelinePage() {
   return (
     <div className="space-y-6">
       <div>
-        <p className="text-sm font-semibold uppercase tracking-[0.18em] text-bayou-600">{activeOrg.name}</p>
-        <h2 className="mt-2 text-2xl font-bold text-slate-900 sm:text-3xl">Kanban lead flow</h2>
+        <p className="text-sm font-semibold uppercase tracking-[0.18em] text-aqua-100">{activeOrg.name}</p>
+        <h2 className="mt-2 text-2xl font-bold text-white sm:text-3xl">Kanban lead flow</h2>
       </div>
       <PipelineBoard leads={leads} />
     </div>

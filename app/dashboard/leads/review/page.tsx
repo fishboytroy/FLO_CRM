@@ -24,13 +24,13 @@ export default async function ReviewLeadsPage() {
     <div className="space-y-6">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div className="min-w-0">
-          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-bayou-600">{activeOrg.name}</p>
-          <h2 className="mt-2 text-2xl font-bold text-slate-900 sm:text-3xl">Manual review leads</h2>
-          <p className="mt-2 max-w-2xl text-sm text-slate-600">
+          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-aqua-100">{activeOrg.name}</p>
+          <h2 className="mt-2 text-2xl font-bold text-white sm:text-3xl">Manual review leads</h2>
+          <p className="mt-2 max-w-2xl text-sm text-slate-400">
             Leads here were not confidently routed by ZIP, or need owner-assignment review. Open a lead to add notes, create follow-up tasks, or move its pipeline stage.
           </p>
         </div>
-        <Link href="/dashboard/leads" prefetch={false} className="inline-flex min-h-11 items-center justify-center rounded-md border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+        <Link href="/dashboard/leads" prefetch={false} className="inline-flex min-h-11 items-center justify-center rounded-md border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold text-slate-100 hover:bg-white/10">
           Back to leads
         </Link>
       </div>
@@ -42,18 +42,18 @@ export default async function ReviewLeadsPage() {
               {leads.map((lead) => {
                 const reviewAssignment = lead.assignmentHistory.find(isReviewAssignment);
                 return (
-                  <Link key={lead.id} href={`/dashboard/leads/${lead.id}`} prefetch={false} className="block rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+                  <Link key={lead.id} href={`/dashboard/leads/${lead.id}`} prefetch={false} className="block rounded-lg border border-white/10 bg-obsidian-950/50 p-4 shadow-glass">
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
-                        <p className="truncate font-bold text-slate-900">{lead.firstName} {lead.lastName}</p>
+                        <p className="truncate font-bold text-white">{lead.firstName} {lead.lastName}</p>
                         <p className="mt-1 break-words text-xs text-slate-500">{lead.email ?? lead.phone ?? "No contact info"}</p>
                       </div>
                       <Badge tone="green">{labelFor(leadTypes, lead.leadType)}</Badge>
                     </div>
-                    <div className="mt-4 grid gap-3 text-sm text-slate-600">
+                    <div className="mt-4 grid gap-3 text-sm text-slate-300">
                       <div className="flex items-center justify-between gap-3">
                         <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">ZIP</span>
-                        <span className="font-semibold text-slate-800">{lead.zipCode ?? "No ZIP"}</span>
+                        <span className="font-semibold text-slate-100">{lead.zipCode ?? "No ZIP"}</span>
                       </div>
                       <div>
                         <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Reason</p>
@@ -64,11 +64,11 @@ export default async function ReviewLeadsPage() {
                       </div>
                       <div className="flex items-center justify-between gap-3">
                         <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">Created</span>
-                        <span className="font-semibold text-slate-800">{format(lead.createdAt, "MMM d, yyyy")}</span>
+                        <span className="font-semibold text-slate-100">{format(lead.createdAt, "MMM d, yyyy")}</span>
                       </div>
                       <div>
                         <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Source</p>
-                        <p className="mt-1 break-words text-slate-700">{lead.source ?? "No source"}</p>
+                        <p className="mt-1 break-words text-slate-300">{lead.source ?? "No source"}</p>
                       </div>
                     </div>
                   </Link>
@@ -76,7 +76,7 @@ export default async function ReviewLeadsPage() {
               })}
             </div>
             <table className="hidden w-full text-left text-sm md:table">
-              <thead className="bg-slate-100 text-xs uppercase tracking-wide text-slate-500">
+              <thead className="bg-white/5 text-xs uppercase tracking-wide text-slate-400">
                 <tr>
                   <th className="px-4 py-3">Lead</th>
                   <th className="px-4 py-3">Type</th>
@@ -89,13 +89,13 @@ export default async function ReviewLeadsPage() {
                   <th className="px-4 py-3">Open</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-white/10 text-slate-300">
                 {leads.map((lead) => {
                   const reviewAssignment = lead.assignmentHistory.find(isReviewAssignment);
                   return (
-                    <tr key={lead.id} className="align-top hover:bg-slate-50">
+                    <tr key={lead.id} className="align-top hover:bg-white/5">
                       <td className="px-4 py-4">
-                        <p className="font-bold text-slate-900">{lead.firstName} {lead.lastName}</p>
+                        <p className="font-bold text-white">{lead.firstName} {lead.lastName}</p>
                         <p className="text-xs text-slate-500">{lead.email ?? lead.phone ?? "No contact info"}</p>
                       </td>
                       <td className="px-4 py-4"><Badge tone="green">{labelFor(leadTypes, lead.leadType)}</Badge></td>
@@ -109,7 +109,7 @@ export default async function ReviewLeadsPage() {
                       <td className="px-4 py-4">{lead.assignedAgent?.name ?? "Unassigned"}</td>
                       <td className="px-4 py-4">{format(lead.createdAt, "MMM d, yyyy")}</td>
                       <td className="px-4 py-4">
-                        <Link href={`/dashboard/leads/${lead.id}`} prefetch={false} className="font-semibold text-bayou-700 hover:text-bayou-800">
+                        <Link href={`/dashboard/leads/${lead.id}`} prefetch={false} className="font-semibold text-aqua-100 hover:text-white">
                           View
                         </Link>
                       </td>

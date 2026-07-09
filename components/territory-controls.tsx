@@ -47,7 +47,7 @@ export function AddTerritoryForm() {
       <div className="flex items-end">
         <Button className="w-full lg:w-auto" disabled={saving}>{saving ? "Adding..." : "Add ZIP"}</Button>
       </div>
-      {error ? <p className="rounded-md bg-red-50 p-3 text-sm text-red-700 lg:col-span-3">{error}</p> : null}
+      {error ? <p className="rounded-md border border-red-400/30 bg-red-500/10 p-3 text-sm text-red-100 lg:col-span-3">{error}</p> : null}
     </form>
   );
 }
@@ -89,7 +89,7 @@ export function TerritoryStatusForm({ id, status }: { id: string; status: Organi
           {saving ? "Saving..." : "Update"}
         </Button>
       </div>
-      {error ? <p className="text-xs font-semibold text-red-700">{error}</p> : null}
+      {error ? <p className="text-xs font-semibold text-red-100">{error}</p> : null}
     </form>
   );
 }
