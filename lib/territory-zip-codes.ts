@@ -18,6 +18,7 @@ export type TerritoryConflictRecord = {
 export type TerritoryRouteRecord = {
   id: string;
   organizationId: string;
+  assignedUserId: string | null;
   organization: {
     id: string;
     name: string;
@@ -47,6 +48,26 @@ export function normalizeTerritoryZipCode(raw?: string | number | null) {
   const match = trimmed.match(/^(\d{5})(?:-\d{4})?$/);
   if (!match) return { success: false as const, error: "Use a valid 5-digit ZIP or ZIP+4" };
   return { success: true as const, zipCode: match[1] };
+}
+
+export function normalizeTerritoryZipCodes(raw?: string | number | null) {
+  if (raw === undefined || raw === null || raw === "") return { success: false as const, error: "At least one ZIP code is required" };
+
+  const values = String(raw)
+    .split(/[\s,;]+/)
+    .map((value) => value.trim())
+    .filter(Boolean);
+
+  if (!values.length) return { success: false as const, error: "At least one ZIP code is required" };
+
+  const zipCodes: string[] = [];
+  for (const value of values) {
+    const normalized = normalizeTerritoryZipCode(value);
+    if (!normalized.success) return { success: false as const, error: `Invalid ZIP "${value}". Use 5-digit ZIPs separated by commas, spaces, or new lines.` };
+    if (!zipCodes.includes(normalized.zipCode)) zipCodes.push(normalized.zipCode);
+  }
+
+  return { success: true as const, zipCodes };
 }
 
 export function parseTerritoryStatus(raw: unknown, fallback = OrganizationZipCodeStatus.active) {
@@ -111,6 +132,17 @@ export function decideLeadRouting(zipCode: string | undefined, fallbackOrganizat
   }
 
   const match = matches[0];
+  if (match.assignedUserId) {
+    return {
+      kind: "zip_match",
+      organizationId: match.organizationId,
+      assignedAgentId: match.assignedUserId,
+      reason: LeadAssignmentReason.zip_match,
+      zipCode,
+      message: `ZIP ${zipCode} matched active territory for ${match.organization.name}. Assigned to the ZIP territory agent.`
+    };
+  }
+
   const owners = match.organization.memberships.filter((membership) => membership.role === MembershipRole.owner);
   const isIndividual = match.organization.plan === OrganizationPlan.individual;
   const assignedAgentId = isIndividual && owners.length === 1 ? owners[0].userId : null;
@@ -141,7 +173,10 @@ export async function getLeadRoutingDecision(db: TerritoryRoutingDb, zipCode: st
       exclusive: true,
       status: { in: [OrganizationZipCodeStatus.active, OrganizationZipCodeStatus.trialing] }
     },
-    include: {
+    select: {
+      id: true,
+      organizationId: true,
+      assignedUserId: true,
       organization: {
         select: {
           id: true,

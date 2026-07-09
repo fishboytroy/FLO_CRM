@@ -4,9 +4,11 @@ import { auth } from "@/auth";
 import {
   AddOrganizationMemberForm,
   AssignOrganizationTerritoryForm,
-  CreateOrganizationForm
+  CreateOrganizationForm,
+  DeleteOrganizationButton
 } from "@/components/platform-organization-controls";
 import { Badge, Card, EmptyState } from "@/components/ui";
+import { INTERNAL_ORG_ID } from "@/lib/access";
 import { prisma } from "@/lib/prisma";
 import { isPlatformAdminRole } from "@/lib/platform-admin";
 
@@ -31,7 +33,8 @@ export default async function PlatformOrganizationsPage() {
         include: { user: true }
       },
       zipCodes: {
-        orderBy: [{ status: "asc" }, { zipCode: "asc" }]
+        orderBy: [{ status: "asc" }, { zipCode: "asc" }],
+        include: { assignedUser: true }
       },
       leads: {
         orderBy: { createdAt: "desc" },
@@ -82,6 +85,9 @@ export default async function PlatformOrganizationsPage() {
                   <div className="flex flex-wrap gap-2">
                     <Badge tone="blue">{organization.plan}</Badge>
                     <Badge tone={statusTone(organization.status)}>{organization.status}</Badge>
+                    {organization.id === INTERNAL_ORG_ID || organization.plan === "internal" ? null : (
+                      <DeleteOrganizationButton organizationId={organization.id} organizationName={organization.name} />
+                    )}
                   </div>
                 </div>
 
@@ -144,7 +150,17 @@ export default async function PlatformOrganizationsPage() {
                   <div>
                     <h4 className="font-bold text-white">ZIP territories</h4>
                     <div className="mt-3">
-                      <AssignOrganizationTerritoryForm organizationId={organization.id} />
+                      <AssignOrganizationTerritoryForm
+                        organizationId={organization.id}
+                        members={organization.memberships.map((membership) => ({
+                          userId: membership.userId,
+                          role: membership.role,
+                          user: {
+                            name: membership.user.name,
+                            email: membership.user.email
+                          }
+                        }))}
+                      />
                     </div>
                   </div>
                   {organization.zipCodes.length ? (
@@ -152,16 +168,31 @@ export default async function PlatformOrganizationsPage() {
                       <table className="w-full text-left text-sm">
                         <thead className="bg-white/5 text-xs uppercase tracking-wide text-slate-400">
                           <tr>
+                            <th className="px-3 py-2">User</th>
+                            <th className="px-3 py-2">Role</th>
                             <th className="px-3 py-2">ZIP</th>
                             <th className="px-3 py-2">Status</th>
+                            <th className="px-3 py-2">Agent</th>
                             <th className="px-3 py-2">Exclusive</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-white/10 text-slate-300">
                           {organization.zipCodes.map((territory) => (
                             <tr key={territory.id}>
+                              <td className="px-3 py-3 font-semibold text-white">{organization.name}</td>
+                              <td className="px-3 py-3"><Badge>{organization.plan}</Badge></td>
                               <td className="px-3 py-3 font-bold text-white">{territory.zipCode}</td>
                               <td className="px-3 py-3"><Badge tone={territory.status === "active" ? "green" : territory.status === "trialing" ? "gold" : "neutral"}>{territory.status}</Badge></td>
+                              <td className="px-3 py-3">
+                                {territory.assignedUser ? (
+                                  <div>
+                                    <p className="font-semibold text-white">{territory.assignedUser.name ?? "Unnamed user"}</p>
+                                    <p className="break-all text-xs text-slate-500">{territory.assignedUser.email}</p>
+                                  </div>
+                                ) : (
+                                  <span className="text-slate-500">Unassigned</span>
+                                )}
+                              </td>
                               <td className="px-3 py-3">{territory.exclusive ? "Yes" : "No"}</td>
                             </tr>
                           ))}

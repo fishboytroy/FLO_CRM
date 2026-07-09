@@ -23,6 +23,15 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   const body = await request.json().catch(() => null);
   const status = parseTerritoryStatus(body?.status);
   if (!status.success) return NextResponse.json({ error: status.error }, { status: 400 });
+  const assignedUserId = typeof body?.assignedUserId === "string" && body.assignedUserId.trim() ? body.assignedUserId.trim() : null;
+
+  if (assignedUserId) {
+    const membership = await prisma.membership.findUnique({
+      where: { userId_organizationId: { userId: assignedUserId, organizationId: activeOrg.id } },
+      select: { id: true }
+    });
+    if (!membership) return NextResponse.json({ error: "Assigned agent must be a member of this organization" }, { status: 400 });
+  }
 
   if (territory.exclusive && isActiveTerritoryStatus(status.status)) {
     const conflicts = await prisma.organizationZipCode.findMany({
@@ -39,7 +48,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
   const updatedTerritory = await prisma.organizationZipCode.update({
     where: { id: territory.id },
-    data: { status: status.status }
+    data: { status: status.status, assignedUserId }
   });
 
   return NextResponse.json({ territory: updatedTerritory });

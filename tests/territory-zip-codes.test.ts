@@ -5,6 +5,7 @@ import {
   canManageTerritories,
   decideLeadRouting,
   normalizeTerritoryZipCode,
+  normalizeTerritoryZipCodes,
   parseTerritoryStatus,
   TerritoryRouteRecord,
   territoryConflictMessage
@@ -14,6 +15,7 @@ function routeRecord(overrides: Partial<TerritoryRouteRecord> = {}): TerritoryRo
   return {
     id: overrides.id ?? "territory_1",
     organizationId: overrides.organizationId ?? "org_match",
+    assignedUserId: overrides.assignedUserId ?? null,
     organization: overrides.organization ?? {
       id: overrides.organizationId ?? "org_match",
       name: "Acadia Agent Membership",
@@ -33,6 +35,20 @@ test("ZIP territory creation normalizes ZIP+4", () => {
 
 test("ZIP territory creation rejects invalid ZIP", () => {
   assert.deepEqual(normalizeTerritoryZipCode("Lafayette"), { success: false, error: "Use a valid 5-digit ZIP or ZIP+4" });
+});
+
+test("bulk ZIP territory creation normalizes comma space and newline separated values", () => {
+  assert.deepEqual(normalizeTerritoryZipCodes("70508, 70503\n70508 70506"), {
+    success: true,
+    zipCodes: ["70508", "70503", "70506"]
+  });
+});
+
+test("bulk ZIP territory creation reports the invalid ZIP value", () => {
+  assert.deepEqual(normalizeTerritoryZipCodes("70508, Lafayette"), {
+    success: false,
+    error: 'Invalid ZIP "Lafayette". Use 5-digit ZIPs separated by commas, spaces, or new lines.'
+  });
 });
 
 test("duplicate active or trialing exclusive ZIP is rejected across organizations", () => {
@@ -170,6 +186,25 @@ test("matching team organization leaves assignedAgentId null", () => {
   assert.equal(decision.organizationId, "org_team");
   assert.equal(decision.assignedAgentId, null);
   assert.match(decision.message, /Team account lead was left unassigned/);
+});
+
+test("matching team territory assigns the territory agent when one is set", () => {
+  const decision = decideLeadRouting("70508", "org_internal", [
+    routeRecord({
+      organizationId: "org_team",
+      assignedUserId: "team_agent",
+      organization: {
+        id: "org_team",
+        name: "Bayou Home Team",
+        plan: OrganizationPlan.team,
+        memberships: [{ userId: "team_owner", role: MembershipRole.owner }]
+      }
+    })
+  ]);
+
+  assert.equal(decision.organizationId, "org_team");
+  assert.equal(decision.assignedAgentId, "team_agent");
+  assert.match(decision.message, /Assigned to the ZIP territory agent/);
 });
 
 test("LeadAssignmentHistory data can be created from zip_match and fallback decisions", () => {

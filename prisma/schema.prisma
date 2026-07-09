@@ -119,6 +119,7 @@ model User {
   assignmentFromHistories    LeadAssignmentHistory[] @relation("LeadAssignmentFromUser")
   assignmentToHistories      LeadAssignmentHistory[] @relation("LeadAssignmentToUser")
   assignmentCreatedHistories LeadAssignmentHistory[] @relation("LeadAssignmentCreatedBy")
+  assignedZipCodes           OrganizationZipCode[]   @relation("AssignedTerritoryAgent")
 }
 
 model Organization {
@@ -149,6 +150,7 @@ model Organization {
 model OrganizationZipCode {
   id             String                    @id @default(cuid())
   organizationId String
+  assignedUserId String?
   zipCode        String
   status         OrganizationZipCodeStatus @default(active)
   exclusive      Boolean                   @default(true)
@@ -158,8 +160,10 @@ model OrganizationZipCode {
   updatedAt      DateTime                  @updatedAt
 
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  assignedUser User? @relation("AssignedTerritoryAgent", fields: [assignedUserId], references: [id], onDelete: SetNull)
 
   @@index([organizationId])
+  @@index([assignedUserId])
   @@index([zipCode])
   @@index([status])
 }

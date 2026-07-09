@@ -6,7 +6,7 @@ import { prisma } from "@/lib/prisma";
 import {
   canManageTerritories,
   isActiveTerritoryStatus,
-  normalizeTerritoryZipCode,
+  normalizeTerritoryZipCodes,
   parseTerritoryStatus,
   territoryConflictMessage
 } from "@/lib/territory-zip-codes";
@@ -34,35 +34,47 @@ export async function POST(request: NextRequest) {
   }
 
   const body = await request.json().catch(() => null);
-  const zip = normalizeTerritoryZipCode(body?.zipCode);
-  if (!zip.success) return NextResponse.json({ error: zip.error }, { status: 400 });
+  const zipCodes = normalizeTerritoryZipCodes(body?.zipCodes ?? body?.zipCode);
+  if (!zipCodes.success) return NextResponse.json({ error: zipCodes.error }, { status: 400 });
 
   const status = parseTerritoryStatus(body?.status, OrganizationZipCodeStatus.active);
   if (!status.success) return NextResponse.json({ error: status.error }, { status: 400 });
 
   const exclusive = body?.exclusive === undefined ? true : Boolean(body.exclusive);
+  const assignedUserId = typeof body?.assignedUserId === "string" && body.assignedUserId.trim() ? body.assignedUserId.trim() : null;
+
+  if (assignedUserId) {
+    const membership = await prisma.membership.findUnique({
+      where: { userId_organizationId: { userId: assignedUserId, organizationId: activeOrg.id } },
+      select: { id: true }
+    });
+    if (!membership) return NextResponse.json({ error: "Assigned agent must be a member of this organization" }, { status: 400 });
+  }
 
   if (exclusive && isActiveTerritoryStatus(status.status)) {
     const conflicts = await prisma.organizationZipCode.findMany({
       where: {
-        zipCode: zip.zipCode,
+        zipCode: { in: zipCodes.zipCodes },
         exclusive: true,
         status: { in: [OrganizationZipCodeStatus.active, OrganizationZipCodeStatus.trialing] }
       },
-      select: { id: true, organizationId: true }
+      select: { id: true, organizationId: true, zipCode: true }
     });
-    const conflictMessage = territoryConflictMessage(conflicts, activeOrg.id);
-    if (conflictMessage) return NextResponse.json({ error: conflictMessage }, { status: 409 });
+    for (const zipCode of zipCodes.zipCodes) {
+      const conflictMessage = territoryConflictMessage(conflicts.filter((record) => record.zipCode === zipCode), activeOrg.id);
+      if (conflictMessage) return NextResponse.json({ error: `${zipCode}: ${conflictMessage}` }, { status: 409 });
+    }
   }
 
-  const territory = await prisma.organizationZipCode.create({
+  const territories = await prisma.$transaction(zipCodes.zipCodes.map((zipCode) => prisma.organizationZipCode.create({
     data: {
       organizationId: activeOrg.id,
-      zipCode: zip.zipCode,
+      assignedUserId,
+      zipCode,
       status: status.status,
       exclusive
     }
-  });
+  })));
 
-  return NextResponse.json({ territory }, { status: 201 });
+  return NextResponse.json({ territories }, { status: 201 });
 }
