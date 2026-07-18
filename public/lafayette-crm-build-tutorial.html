@@ -1,0 +1,511 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Lafayette CRM Build Tutorial</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f7f6ef;
+      --ink: #17211d;
+      --muted: #5f7167;
+      --line: #d7ded9;
+      --panel: #ffffff;
+      --soft: #edf3ef;
+      --brand: #194536;
+      --brand-2: #2f6d58;
+      --accent: #b78a48;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+    }
+
+    .tutorial {
+      min-height: 100vh;
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      gap: 1rem;
+      padding: clamp(1rem, 3vw, 2rem);
+    }
+
+    header, footer {
+      max-width: 1100px;
+      width: 100%;
+      margin: 0 auto;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: end;
+      gap: 1rem;
+      border-bottom: 1px solid var(--line);
+      padding-bottom: 1rem;
+    }
+
+    h1, h2, p { margin: 0; }
+    h1 {
+      font-size: clamp(1.4rem, 3vw, 2.35rem);
+      line-height: 1.05;
+      max-width: 720px;
+    }
+
+    .kicker {
+      color: var(--brand);
+      font-size: 0.78rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.11em;
+      margin-bottom: 0.45rem;
+    }
+
+    .runtime {
+      color: var(--muted);
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    main {
+      width: 100%;
+      max-width: 1100px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: minmax(0, 1.05fr) minmax(300px, 0.95fr);
+      gap: clamp(1rem, 3vw, 2rem);
+      align-items: stretch;
+    }
+
+    .stage, .script {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      box-shadow: 0 18px 40px rgba(23, 33, 29, 0.08);
+      overflow: hidden;
+    }
+
+    .stage {
+      min-height: 560px;
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+    }
+
+    .slide-head {
+      padding: 1.25rem;
+      background: linear-gradient(135deg, var(--soft), #fff);
+      border-bottom: 1px solid var(--line);
+    }
+
+    .slide-head h2 {
+      font-size: clamp(1.25rem, 2.3vw, 2rem);
+      line-height: 1.1;
+      margin-top: 0.25rem;
+    }
+
+    .slide-subtitle {
+      color: var(--muted);
+      margin-top: 0.5rem;
+      line-height: 1.45;
+    }
+
+    .diagram {
+      position: relative;
+      display: grid;
+      place-items: center;
+      padding: 1.5rem;
+      overflow: hidden;
+    }
+
+    .orbit {
+      position: absolute;
+      inset: 16%;
+      border: 1px dashed rgba(25, 69, 54, 0.28);
+      border-radius: 999px;
+      animation: spin 18s linear infinite;
+    }
+
+    .core {
+      width: min(72vw, 420px);
+      aspect-ratio: 1;
+      border-radius: 999px;
+      display: grid;
+      place-items: center;
+      background: radial-gradient(circle at 35% 30%, #fff 0 12%, var(--soft) 13% 44%, rgba(25, 69, 54, 0.11) 45% 100%);
+      border: 1px solid rgba(25, 69, 54, 0.16);
+      box-shadow: inset 0 0 0 14px rgba(255, 255, 255, 0.42), 0 24px 60px rgba(23, 33, 29, 0.12);
+    }
+
+    .core-label {
+      text-align: center;
+      max-width: 250px;
+      font-size: clamp(1.05rem, 2vw, 1.45rem);
+      line-height: 1.15;
+      font-weight: 800;
+      color: var(--brand);
+    }
+
+    .nodes {
+      position: absolute;
+      inset: 1rem;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      grid-template-rows: repeat(3, 1fr);
+      pointer-events: none;
+    }
+
+    .node {
+      justify-self: center;
+      align-self: center;
+      min-width: 8.5rem;
+      padding: 0.72rem 0.82rem;
+      border: 1px solid rgba(25, 69, 54, 0.16);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.92);
+      box-shadow: 0 12px 28px rgba(23, 33, 29, 0.1);
+      text-align: center;
+      font-weight: 800;
+      color: var(--ink);
+      animation: pulse 4.8s ease-in-out infinite;
+    }
+
+    .node small {
+      display: block;
+      color: var(--muted);
+      font-size: 0.72rem;
+      font-weight: 700;
+      margin-top: 0.18rem;
+    }
+
+    .node:nth-child(1) { grid-area: 1 / 2; animation-delay: 0s; }
+    .node:nth-child(2) { grid-area: 2 / 3; animation-delay: 0.6s; }
+    .node:nth-child(3) { grid-area: 3 / 2; animation-delay: 1.2s; }
+    .node:nth-child(4) { grid-area: 2 / 1; animation-delay: 1.8s; }
+
+    .checklist {
+      display: grid;
+      gap: 0.65rem;
+      padding: 1.25rem;
+      border-top: 1px solid var(--line);
+      background: #fff;
+    }
+
+    .step-line {
+      display: grid;
+      grid-template-columns: 2rem 1fr;
+      gap: 0.7rem;
+      align-items: start;
+      color: var(--muted);
+      line-height: 1.35;
+    }
+
+    .step-num {
+      display: grid;
+      place-items: center;
+      width: 2rem;
+      height: 2rem;
+      border-radius: 999px;
+      background: var(--brand);
+      color: #fff;
+      font-size: 0.8rem;
+      font-weight: 800;
+    }
+
+    .script {
+      display: grid;
+      grid-template-rows: auto 1fr;
+    }
+
+    .script-inner {
+      padding: 1.25rem;
+      display: grid;
+      align-content: start;
+      gap: 1rem;
+    }
+
+    .script h2 {
+      padding: 1.25rem;
+      border-bottom: 1px solid var(--line);
+      font-size: 1rem;
+      color: var(--brand);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .script p {
+      color: var(--muted);
+      line-height: 1.55;
+    }
+
+    .terms {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.45rem;
+    }
+
+    .term {
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 0.45rem 0.65rem;
+      background: var(--soft);
+      color: var(--brand);
+      font-weight: 800;
+      font-size: 0.78rem;
+    }
+
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 0.75rem;
+      max-width: 1100px;
+      width: 100%;
+      margin: 0 auto;
+      padding-top: 0.25rem;
+    }
+
+    .buttons {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    button {
+      border: 1px solid var(--brand);
+      border-radius: 8px;
+      background: var(--brand);
+      color: #fff;
+      padding: 0.7rem 0.9rem;
+      font: inherit;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    button.secondary {
+      background: #fff;
+      color: var(--brand);
+      border-color: var(--line);
+    }
+
+    .progress {
+      flex: 1;
+      min-width: 220px;
+      align-self: center;
+      height: 0.7rem;
+      border-radius: 999px;
+      background: var(--soft);
+      overflow: hidden;
+      border: 1px solid var(--line);
+    }
+
+    .bar {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--brand), var(--accent));
+      transition: width 350ms ease;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-8px); }
+    }
+
+    @media (max-width: 860px) {
+      main { grid-template-columns: 1fr; }
+      .stage { min-height: 620px; }
+      header { display: grid; }
+      .runtime { white-space: normal; }
+    }
+  </style>
+</head>
+<body>
+  <div class="tutorial">
+    <header>
+      <div>
+        <p class="kicker">Animated build tutorial</p>
+        <h1>Lafayette CRM and WordPress lead funnel: start to finished product</h1>
+      </div>
+      <p class="runtime" id="runtime">Scene 1 of 9</p>
+    </header>
+
+    <main>
+      <section class="stage" aria-live="polite">
+        <div class="slide-head">
+          <p class="kicker" id="sceneKicker">Architecture</p>
+          <h2 id="sceneTitle">Map the operating system</h2>
+          <p class="slide-subtitle" id="sceneSubtitle">Separate the public website, private CRM, production database, email system, and deployment pipeline.</p>
+        </div>
+        <div class="diagram" aria-label="Animated architecture diagram">
+          <div class="orbit"></div>
+          <div class="core"><div class="core-label" id="coreLabel">WordPress + CRM + Supabase</div></div>
+          <div class="nodes" id="nodes"></div>
+        </div>
+        <div class="checklist" id="checklist"></div>
+      </section>
+
+      <aside class="script">
+        <h2>Narration</h2>
+        <div class="script-inner">
+          <p id="narration"></p>
+          <div class="terms" id="terms"></div>
+        </div>
+      </aside>
+    </main>
+
+    <footer class="controls">
+      <div class="buttons">
+        <button type="button" id="prev">Previous</button>
+        <button type="button" id="play">Pause</button>
+        <button type="button" id="next" class="secondary">Next</button>
+      </div>
+      <div class="progress" aria-label="Video progress"><div class="bar" id="bar"></div></div>
+    </footer>
+  </div>
+
+  <script>
+    const scenes = [
+      {
+        kicker: "Architecture",
+        title: "Map the operating system",
+        subtitle: "Separate the public website, private CRM, production database, email system, and deployment pipeline.",
+        core: "WordPress + CRM + Supabase",
+        nodes: [["WordPress", "public funnel"], ["Vercel", "CRM app"], ["Supabase", "Postgres"], ["Brevo", "email"]],
+        checks: ["Website captures demand", "CRM owns lead operations", "Database stores truth", "Email closes the notification loop"],
+        narration: "Start with architecture, not tools. The WordPress site is the public lead capture surface. The CRM is the private operating system. Supabase stores the data, Brevo sends notifications, and Vercel runs the app.",
+        terms: ["Lead capture", "CRM", "Routing", "Notifications"]
+      },
+      {
+        kicker: "Product plan",
+        title: "Define membership mechanics",
+        subtitle: "Plan roles, paid organizations, ZIP territories, onboarding, routing, and verification before coding.",
+        core: "Paid lead membership",
+        nodes: [["Owner", "accountability"], ["Team", "brokerage"], ["ZIP", "territory"], ["Agent", "follow-up"]],
+        checks: ["Platform admin controls access", "Teams and individuals can own territories", "Invites create passwords", "Leads route with ownership"],
+        narration: "The offer is not just a contact list. It is a membership system: owners, teams, agents, ZIP-code rights, lead routing, and follow-up accountability.",
+        terms: ["Membership", "Territories", "Owner", "Agent"]
+      },
+      {
+        kicker: "Local setup",
+        title: "Install the development toolchain",
+        subtitle: "Prepare Git, Node.js, PostgreSQL concepts, Codex, and the local project folder.",
+        core: "Local developer machine",
+        nodes: [["GitHub", "source"], ["Node.js", "runtime"], ["Prisma", "schema"], ["Postgres", "local/dev"]],
+        checks: ["Clone repo", "Install packages", "Generate Prisma client", "Run local build and tests"],
+        narration: "The local machine needs Git, Node.js, the CRM repository, and a working understanding of PostgreSQL. Prisma keeps database structure reproducible through migrations.",
+        terms: ["Git", "Node.js", "Prisma", "PostgreSQL"]
+      },
+      {
+        kicker: "Services",
+        title: "Create paid production accounts",
+        subtitle: "Vercel hosts the CRM, Supabase hosts Postgres, Brevo sends email, and Stripe is reserved for membership payments.",
+        core: "Production services",
+        nodes: [["Vercel", "deploy"], ["Supabase", "database"], ["Brevo", "SMTP/API"], ["Stripe", "payments"]],
+        checks: ["Create projects", "Confirm domains", "Add env vars", "Redeploy after changes"],
+        narration: "Paid services make the system reliable. Vercel handles deployment, Supabase handles the database, Brevo handles transactional email, and Stripe becomes the payment layer.",
+        terms: ["Vercel", "Supabase", "Brevo", "Stripe"]
+      },
+      {
+        kicker: "Environment",
+        title: "Generate keys and fill .env safely",
+        subtitle: "Store secrets locally and in Vercel, never in GitHub.",
+        core: ".env + Vercel env",
+        nodes: [["DATABASE_URL", "pooler"], ["AUTH_SECRET", "login"], ["BREVO_API_KEY", "email"], ["CRM_PUBLIC_API_KEY", "intake"]],
+        checks: ["Use Supabase shared pooler", "Add pgbouncer=true", "Add connection_limit=1", "Redeploy after env updates"],
+        narration: "The environment file is the wiring harness. Database URLs, API keys, auth secrets, allowed origins, and email sender values must be correct locally and in Vercel.",
+        terms: [".env", "API keys", "Pooler", "Secrets"]
+      },
+      {
+        kicker: "Database",
+        title: "Deploy schema and secure access",
+        subtitle: "Run Prisma migrations, check RLS/security warnings, and verify connection limits.",
+        core: "Supabase Postgres",
+        nodes: [["Migrations", "schema"], ["RLS", "security"], ["Pooler", "scale"], ["Logs", "diagnostics"]],
+        checks: ["Migrations applied", "Public tables locked down", "Sensitive columns protected", "Pooler connection succeeds"],
+        narration: "Supabase is the source of truth. The CRM needs migrations deployed, public access locked down, and the shared pooler configured for serverless-friendly connections.",
+        terms: ["Migrations", "RLS", "pgbouncer", "Logs"]
+      },
+      {
+        kicker: "WordPress",
+        title: "Connect the public funnel",
+        subtitle: "Build public forms, WP Mail SMTP, membership inquiries, and MCP-backed site control.",
+        core: "Public website funnel",
+        nodes: [["Buyer form", "lead"], ["Seller form", "lead"], ["Membership form", "email"], ["MCP", "control"]],
+        checks: ["Lead forms submit", "Membership form emails admin", "WP Mail SMTP passes", "MCP can inspect site"],
+        narration: "WordPress remains the public-facing marketing engine. Forms capture buyer, seller, and agent interest, while MCP lets Codex inspect pages, plugins, and snippets.",
+        terms: ["WordPress", "Snippets", "WP Mail SMTP", "MCP"]
+      },
+      {
+        kicker: "Deploy",
+        title: "Publish and test production",
+        subtitle: "Build, test, deploy, and verify the entire lead-to-owner path.",
+        core: "Production verification",
+        nodes: [["Build", "Next.js"], ["Tests", "coverage"], ["Deploy", "Vercel"], ["Lead test", "email"]],
+        checks: ["npm test passes", "npm run build passes", "Vercel deploy current", "Real lead email received"],
+        narration: "A feature is not finished until production proves it. Run tests, build, redeploy, submit a real lead, and confirm the correct person receives the email.",
+        terms: ["CI", "Deploy", "Smoke test", "Lead routing"]
+      },
+      {
+        kicker: "Recovery",
+        title: "Back up and document the system",
+        subtitle: "Use E: drive backups and GitHub source history so the product can be rebuilt.",
+        core: "Recoverable product",
+        nodes: [["E: backup", "archives"], ["GitHub", "repo"], ["README", "runbook"], ["Checklist", "handoff"]],
+        checks: ["CRM archive exists", "WordPress snapshot exists", "GitHub has source", "Runbook explains rebuild path"],
+        narration: "The final product needs recovery paths. Keep GitHub current, write clear documentation, and create dated backups on the E: drive.",
+        terms: ["Backup", "GitHub", "Runbook", "Recovery"]
+      }
+    ];
+
+    let index = 0;
+    let playing = true;
+    const ids = ["runtime", "sceneKicker", "sceneTitle", "sceneSubtitle", "coreLabel", "nodes", "checklist", "narration", "terms", "bar", "play"];
+    const el = Object.fromEntries(ids.map((id) => [id, document.getElementById(id)]));
+
+    function render() {
+      const scene = scenes[index];
+      el.runtime.textContent = `Scene ${index + 1} of ${scenes.length}`;
+      el.sceneKicker.textContent = scene.kicker;
+      el.sceneTitle.textContent = scene.title;
+      el.sceneSubtitle.textContent = scene.subtitle;
+      el.coreLabel.textContent = scene.core;
+      el.nodes.innerHTML = scene.nodes.map(([name, detail]) => `<div class="node">${name}<small>${detail}</small></div>`).join("");
+      el.checklist.innerHTML = scene.checks.map((text, i) => `<div class="step-line"><span class="step-num">${i + 1}</span><span>${text}</span></div>`).join("");
+      el.narration.textContent = scene.narration;
+      el.terms.innerHTML = scene.terms.map((term) => `<span class="term">${term}</span>`).join("");
+      el.bar.style.width = `${((index + 1) / scenes.length) * 100}%`;
+      el.play.textContent = playing ? "Pause" : "Play";
+    }
+
+    function next() {
+      index = (index + 1) % scenes.length;
+      render();
+    }
+
+    function previous() {
+      index = (index - 1 + scenes.length) % scenes.length;
+      render();
+    }
+
+    document.getElementById("next").addEventListener("click", next);
+    document.getElementById("prev").addEventListener("click", previous);
+    document.getElementById("play").addEventListener("click", () => {
+      playing = !playing;
+      render();
+    });
+
+    setInterval(() => {
+      if (playing) next();
+    }, 6200);
+
+    render();
+  </script>
+</body>
+</html>
