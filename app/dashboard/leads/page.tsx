@@ -20,6 +20,9 @@ export default async function LeadsPage({ searchParams }: { searchParams?: Promi
             { lastName: { contains: q, mode: "insensitive" } },
             { email: { contains: q, mode: "insensitive" } },
             { phone: { contains: q, mode: "insensitive" } },
+            { addressLine1: { contains: q, mode: "insensitive" } },
+            { addressCity: { contains: q, mode: "insensitive" } },
+            { addressPostalCode: { contains: q, mode: "insensitive" } },
             { zipCode: { contains: q, mode: "insensitive" } },
             { desiredLocation: { contains: q, mode: "insensitive" } }
           ]

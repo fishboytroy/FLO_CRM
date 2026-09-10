@@ -266,6 +266,11 @@ model Lead {
   budgetMin          Int?
   budgetMax          Int?
   desiredLocation    String?
+  addressLine1       String?
+  addressLine2       String?
+  addressCity        String?
+  addressState       String?
+  addressPostalCode  String?
   propertyInterest   String?
   timeframe          String?
   notes              String?
