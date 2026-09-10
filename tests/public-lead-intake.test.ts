@@ -170,6 +170,44 @@ test("internal lead validation rejects invalid ZIP", () => {
   assert.deepEqual(parsed.error.flatten().fieldErrors.zipCode, ["Use a valid 5-digit ZIP or ZIP+4"]);
 });
 
+test("internal lead validation accepts a customer address without changing allocation ZIP", () => {
+  const parsed = leadSchema.safeParse({
+    firstName: "Jordan",
+    lastName: "Broussard",
+    email: "jordan@example.com",
+    leadType: "buyer",
+    status: "new_lead",
+    zipCode: "70508-1234",
+    addressLine1: "101 Main Street",
+    addressLine2: "Suite 200",
+    addressCity: "Lafayette",
+    addressState: "la",
+    addressPostalCode: "70501-4321"
+  });
+
+  assert.equal(parsed.success, true);
+  if (!parsed.success) throw new Error("Expected valid lead");
+  assert.equal(parsed.data.zipCode, "70508");
+  assert.equal(parsed.data.addressState, "LA");
+  assert.equal(parsed.data.addressPostalCode, "70501-4321");
+});
+
+test("internal lead validation rejects an invalid customer address state or postal code", () => {
+  const parsed = leadSchema.safeParse({
+    firstName: "Jordan",
+    lastName: "Broussard",
+    leadType: "buyer",
+    status: "new_lead",
+    addressState: "Louisiana",
+    addressPostalCode: "Lafayette"
+  });
+
+  assert.equal(parsed.success, false);
+  if (parsed.success) throw new Error("Expected invalid lead");
+  assert.deepEqual(parsed.error.flatten().fieldErrors.addressState, ["Use a 2-letter state code"]);
+  assert.deepEqual(parsed.error.flatten().fieldErrors.addressPostalCode, ["Use a valid 5-digit ZIP or ZIP+4"]);
+});
+
 test("lead intake requires a first name or full name", () => {
   const normalized = normalizePublicLead({ email: "person@example.com" });
 

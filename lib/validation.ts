@@ -23,6 +23,30 @@ const optionalZipCode = z
     }
     return match[1];
   });
+const optionalPostalCode = z
+  .string()
+  .trim()
+  .optional()
+  .transform((value, ctx) => {
+    if (!value) return undefined;
+    if (!/^\d{5}(?:-\d{4})?$/.test(value)) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Use a valid 5-digit ZIP or ZIP+4" });
+      return z.NEVER;
+    }
+    return value;
+  });
+const optionalStateCode = z
+  .string()
+  .trim()
+  .optional()
+  .transform((value, ctx) => {
+    if (!value) return undefined;
+    if (!/^[A-Za-z]{2}$/.test(value)) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Use a 2-letter state code" });
+      return z.NEVER;
+    }
+    return value.toUpperCase();
+  });
 const optionalInt = z
   .union([z.string(), z.number()])
   .optional()
@@ -44,6 +68,11 @@ export const leadSchema = z.object({
   budgetMin: optionalInt,
   budgetMax: optionalInt,
   desiredLocation: optionalText,
+  addressLine1: optionalText,
+  addressLine2: optionalText,
+  addressCity: optionalText,
+  addressState: optionalStateCode,
+  addressPostalCode: optionalPostalCode,
   zipCode: optionalZipCode,
   propertyInterest: optionalText,
   timeframe: optionalText,

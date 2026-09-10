@@ -43,6 +43,11 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
     budgetMin: lead.budgetMin,
     budgetMax: lead.budgetMax,
     desiredLocation: lead.desiredLocation,
+    addressLine1: lead.addressLine1,
+    addressLine2: lead.addressLine2,
+    addressCity: lead.addressCity,
+    addressState: lead.addressState,
+    addressPostalCode: lead.addressPostalCode,
     zipCode: lead.zipCode,
     propertyInterest: lead.propertyInterest,
     timeframe: lead.timeframe,
@@ -84,6 +89,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
               <Info label="Location" value={lead.desiredLocation ?? "Not set"} />
               <Info label="Allocation ZIP" value={lead.zipCode ?? "No ZIP"} />
               <Info label="Budget" value={`${money(lead.budgetMin)} - ${money(lead.budgetMax)}`} />
+              <Info label="Customer address" value={formatCustomerAddress(lead)} className="sm:col-span-2 lg:col-span-3" />
               <Info label="Timeframe" value={lead.timeframe ?? "Not set"} />
               <Info label="Interest" value={lead.propertyInterest ?? "Not set"} />
               <Info label="Created" value={format(lead.createdAt, "MMM d, yyyy")} />
@@ -149,9 +155,22 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
   );
 }
 
-function Info({ label, value }: { label: string; value: string }) {
+function formatCustomerAddress(lead: {
+  addressLine1: string | null;
+  addressLine2: string | null;
+  addressCity: string | null;
+  addressState: string | null;
+  addressPostalCode: string | null;
+}) {
+  const locality = [lead.addressCity, lead.addressState].filter(Boolean).join(", ");
+  return [lead.addressLine1, lead.addressLine2, [locality, lead.addressPostalCode].filter(Boolean).join(" ")]
+    .filter(Boolean)
+    .join(" · ") || "Not set";
+}
+
+function Info({ label, value, className }: { label: string; value: string; className?: string }) {
   return (
-    <div>
+    <div className={className}>
       <dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">{label}</dt>
       <dd className="mt-1 break-words text-sm font-semibold text-white">{value}</dd>
     </div>

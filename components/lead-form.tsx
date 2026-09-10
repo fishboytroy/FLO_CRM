@@ -25,6 +25,11 @@ export type LeadFormValue = {
   budgetMin?: number | null;
   budgetMax?: number | null;
   desiredLocation?: string | null;
+  addressLine1?: string | null;
+  addressLine2?: string | null;
+  addressCity?: string | null;
+  addressState?: string | null;
+  addressPostalCode?: string | null;
   zipCode?: string | null;
   propertyInterest?: string | null;
   timeframe?: string | null;
@@ -48,8 +53,11 @@ export function LeadForm({ agents, lead }: { agents: UserOption[]; lead?: LeadFo
     setSaving(false);
     if (!response.ok) {
       const data = await response.json().catch(() => null);
-      const zipErrors = data?.error?.fieldErrors?.zipCode;
-      setError(zipErrors?.[0] ?? "Please check the lead details and try again.");
+      const fieldErrors = data?.error?.fieldErrors;
+      const firstFieldError = fieldErrors
+        ? Object.values(fieldErrors).flat().find((message): message is string => typeof message === "string")
+        : undefined;
+      setError(firstFieldError ?? "Please check the lead details and try again.");
       return;
     }
     const data = await response.json();
@@ -86,6 +94,17 @@ export function LeadForm({ agents, lead }: { agents: UserOption[]; lead?: LeadFo
         <Field label="Property interest" name="propertyInterest" defaultValue={lead?.propertyInterest ?? ""} />
         <Field label="Timeframe" name="timeframe" defaultValue={lead?.timeframe ?? ""} />
       </div>
+      <fieldset className="rounded-md border border-white/10 bg-white/[0.03] p-4">
+        <legend className="px-2 text-sm font-bold text-white">Customer address</legend>
+        <p className="mb-4 text-xs text-slate-400">Optional contact address. This does not change the Allocation ZIP used for lead routing.</p>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field label="Address line 1" name="addressLine1" autoComplete="street-address" defaultValue={lead?.addressLine1 ?? ""} />
+          <Field label="Address line 2" name="addressLine2" autoComplete="address-line2" defaultValue={lead?.addressLine2 ?? ""} placeholder="Apartment, suite, unit" />
+          <Field label="City" name="addressCity" autoComplete="address-level2" defaultValue={lead?.addressCity ?? ""} />
+          <Field label="State" name="addressState" autoComplete="address-level1" maxLength={2} defaultValue={lead?.addressState ?? ""} placeholder="LA" />
+          <Field label="Postal code" name="addressPostalCode" autoComplete="postal-code" defaultValue={lead?.addressPostalCode ?? ""} placeholder="70508" />
+        </div>
+      </fieldset>
       <div className="grid gap-2">
         <label htmlFor="notes">Internal notes</label>
         <textarea id="notes" name="notes" rows={5} defaultValue={lead?.notes ?? ""} />
