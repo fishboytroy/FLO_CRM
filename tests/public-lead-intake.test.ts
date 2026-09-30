@@ -10,6 +10,7 @@ import {
   isAllowedOrigin,
   normalizePublicLead,
   normalizeZipCode,
+  resolvePublicLeadCredential,
   splitName,
   verifyApiKey
 } from "../lib/public-lead-intake";
@@ -22,6 +23,22 @@ test("origin checks allow server-to-server requests and the configured website o
   assert.equal(isAllowedOrigin("https://example.com", allowed), false);
   assert.equal(corsHeaders(allowed, allowed)["Access-Control-Allow-Origin"], allowed);
   assert.equal("Access-Control-Allow-Origin" in corsHeaders("https://example.com", allowed), false);
+});
+
+test("site-specific credentials authenticate and identify their lead source", () => {
+  const configured = {
+    defaultKey: "lafayette-secret",
+    nationalRealtyKey: "national-realty-secret"
+  };
+
+  assert.deepEqual(resolvePublicLeadCredential("lafayette-secret", configured), {
+    id: "lafayette-real-estate"
+  });
+  assert.deepEqual(resolvePublicLeadCredential("national-realty-secret", configured), {
+    id: "national-realty-acadiana",
+    sourceLabel: "National Realty Acadiana"
+  });
+  assert.equal(resolvePublicLeadCredential("wrong-secret", configured), null);
 });
 
 test("API key verification requires an exact header key", () => {
