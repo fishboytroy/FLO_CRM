@@ -38,6 +38,35 @@ export function verifyApiKey(provided: string | null | undefined, configured: st
   return crypto.timingSafeEqual(providedBuffer, configuredBuffer);
 }
 
+export type PublicLeadCredential = {
+  id: "lafayette-real-estate" | "national-realty-acadiana";
+  sourceLabel?: string;
+};
+
+export function resolvePublicLeadCredential(
+  provided: string | null | undefined,
+  configured: {
+    defaultKey?: string;
+    nationalRealtyKey?: string;
+  } = {
+    defaultKey: process.env.CRM_PUBLIC_API_KEY,
+    nationalRealtyKey: process.env.CRM_NATIONAL_REALTY_API_KEY
+  }
+): PublicLeadCredential | null {
+  if (verifyApiKey(provided, configured.defaultKey)) {
+    return { id: "lafayette-real-estate" };
+  }
+
+  if (verifyApiKey(provided, configured.nationalRealtyKey)) {
+    return {
+      id: "national-realty-acadiana",
+      sourceLabel: "National Realty Acadiana"
+    };
+  }
+
+  return null;
+}
+
 export function getClientIp(headers: Headers) {
   const forwardedFor = headers.get("x-forwarded-for")?.split(",")[0]?.trim();
   return forwardedFor || headers.get("x-real-ip") || "unknown";
