@@ -9,6 +9,7 @@ import { isReviewAssignment } from "@/lib/review-leads";
 import { getLeadRoutingDecision } from "@/lib/territory-zip-codes";
 import {
   corsHeaders,
+  getCredentialRoutingDecision,
   getClientIp,
   getHeaderApiKey,
   isAllowedOrigin,
@@ -18,7 +19,7 @@ import {
   PUBLIC_LEAD_RATE_LIMIT_WINDOW_MS,
   publicLeadMaxBodyBytes,
   publicLeadRateLimit,
-  verifyApiKey
+  resolvePublicLeadCredential
 } from "@/lib/public-lead-intake";
 
 export function OPTIONS(request: NextRequest) {
@@ -91,12 +92,19 @@ export async function POST(request: NextRequest) {
   }
 
   const configuredApiKey = process.env.CRM_PUBLIC_API_KEY;
-  if (!configuredApiKey) {
+  const configuredNationalRealtyApiKey = process.env.CRM_NATIONAL_REALTY_API_KEY;
+  if (!configuredApiKey && !configuredNationalRealtyApiKey) {
     publicLeadLog("configuration_missing");
     return NextResponse.json({ error: "Lead intake is not configured" }, { status: 500, headers });
   }
 
-  if (!verifyApiKey(getHeaderApiKey(request.headers), configuredApiKey)) {
+  const credential = resolvePublicLeadCredential(getHeaderApiKey(request.headers), {
+    defaultKey: configuredApiKey,
+    nationalRealtyKey: configuredNationalRealtyApiKey,
+    nationalRealtyOrganizationId: process.env.CRM_NATIONAL_REALTY_ORGANIZATION_ID,
+    nationalRealtyAssignedAgentId: process.env.CRM_NATIONAL_REALTY_ASSIGNED_AGENT_ID
+  });
+  if (!credential) {
     publicLeadLog("unauthorized");
     return NextResponse.json({ error: "Unauthorized" }, { status: 401, headers });
   }
@@ -112,9 +120,19 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ ok: true, spam: true }, { status: 202, headers });
   }
   try {
-    const data = normalized.data;
+    const data = {
+      ...normalized.data,
+      source: credential.sourceLabel
+        ? `${credential.sourceLabel} — ${normalized.data.source}`
+        : normalized.data.source
+    };
     operation = "routing";
-    const routingDecision = await getLeadRoutingDecision(prisma, data.zipCode, INTERNAL_ORG_ID);
+    const credentialRouting = await getCredentialRoutingDecision(prisma, credential, data.zipCode);
+    if (credential.id === "national-realty-acadiana" && !credentialRouting) {
+      publicLeadLog("configuration_missing", { credentialId: credential.id });
+      return NextResponse.json({ error: "Lead source routing is not configured" }, { status: 500, headers });
+    }
+    const routingDecision = credentialRouting ?? await getLeadRoutingDecision(prisma, data.zipCode, INTERNAL_ORG_ID);
     const organizationId = routingDecision.organizationId;
     if (isReviewAssignment(routingDecision)) {
       publicLeadLog("routing_fallback", {

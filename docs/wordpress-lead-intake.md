@@ -59,6 +59,14 @@ The endpoint also accepts `Authorization: Bearer <CRM_PUBLIC_API_KEY>`, but Word
 
 Do not put the API key in the URL, query string, page HTML, or browser JavaScript.
 
+National Realty Acadiana uses its own server-side credential and fixed routing configuration:
+
+- `CRM_NATIONAL_REALTY_API_KEY`
+- `CRM_NATIONAL_REALTY_ORGANIZATION_ID`
+- `CRM_NATIONAL_REALTY_ASSIGNED_AGENT_ID`
+
+When this credential is presented, the CRM verifies the configured organization is active and the configured assignee is a member of it. The lead is then routed directly to National Realty and Melanie, regardless of River Ranch ZIP 70508 being an active Lafayette territory. If this mapping is missing or invalid, intake fails closed instead of sending the lead to another organization. The existing Lafayette credential continues using the original ZIP-territory routing path.
+
 ## Required Payload Rules
 
 CRM-level required field:

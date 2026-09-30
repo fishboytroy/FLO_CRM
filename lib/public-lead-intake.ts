@@ -1,6 +1,7 @@
 import crypto from "crypto";
-import { Lead, LeadType, Prisma } from "@prisma/client";
+import { Lead, LeadAssignmentReason, LeadType, Prisma } from "@prisma/client";
 import { labelFor, leadTypes } from "@/lib/crm";
+import type { TerritoryRoutingDecision } from "@/lib/territory-zip-codes";
 import { publicLeadSchema } from "@/lib/validation";
 
 export const DEFAULT_ALLOWED_ORIGIN = "https://lafayettelouisianarealestate.com";
@@ -36,6 +37,88 @@ export function verifyApiKey(provided: string | null | undefined, configured: st
   const configuredBuffer = Buffer.from(configured);
   if (providedBuffer.length !== configuredBuffer.length) return false;
   return crypto.timingSafeEqual(providedBuffer, configuredBuffer);
+}
+
+export type PublicLeadCredential = {
+  id: "lafayette-real-estate" | "national-realty-acadiana";
+  sourceLabel?: string;
+  fixedOrganizationId?: string;
+  fixedAssignedAgentId?: string;
+};
+
+export function resolvePublicLeadCredential(
+  provided: string | null | undefined,
+  configured: {
+    defaultKey?: string;
+    nationalRealtyKey?: string;
+    nationalRealtyOrganizationId?: string;
+    nationalRealtyAssignedAgentId?: string;
+  } = {
+    defaultKey: process.env.CRM_PUBLIC_API_KEY,
+    nationalRealtyKey: process.env.CRM_NATIONAL_REALTY_API_KEY,
+    nationalRealtyOrganizationId: process.env.CRM_NATIONAL_REALTY_ORGANIZATION_ID,
+    nationalRealtyAssignedAgentId: process.env.CRM_NATIONAL_REALTY_ASSIGNED_AGENT_ID
+  }
+): PublicLeadCredential | null {
+  if (verifyApiKey(provided, configured.defaultKey)) {
+    return { id: "lafayette-real-estate" };
+  }
+
+  if (verifyApiKey(provided, configured.nationalRealtyKey)) {
+    return {
+      id: "national-realty-acadiana",
+      sourceLabel: "National Realty Acadiana",
+      fixedOrganizationId: configured.nationalRealtyOrganizationId,
+      fixedAssignedAgentId: configured.nationalRealtyAssignedAgentId
+    };
+  }
+
+  return null;
+}
+
+type FixedRoutingDb = {
+  organization: {
+    findFirst: (args: Prisma.OrganizationFindFirstArgs) => Promise<unknown>;
+  };
+  membership: {
+    findUnique: (args: Prisma.MembershipFindUniqueArgs) => Promise<unknown>;
+  };
+};
+
+export async function getCredentialRoutingDecision(
+  db: FixedRoutingDb,
+  credential: PublicLeadCredential,
+  zipCode?: string
+): Promise<TerritoryRoutingDecision | null> {
+  if (!credential.fixedOrganizationId) return null;
+
+  const organization = await db.organization.findFirst({
+    where: { id: credential.fixedOrganizationId, status: { in: ["active", "trialing"] } },
+    select: { id: true, name: true }
+  }) as { id: string; name: string } | null;
+  if (!organization) throw new Error("Configured lead-source organization is unavailable");
+
+  if (credential.fixedAssignedAgentId) {
+    const membership = await db.membership.findUnique({
+      where: {
+        userId_organizationId: {
+          userId: credential.fixedAssignedAgentId,
+          organizationId: organization.id
+        }
+      },
+      select: { id: true }
+    });
+    if (!membership) throw new Error("Configured lead-source assignee is not an organization member");
+  }
+
+  return {
+    kind: "zip_match",
+    organizationId: organization.id,
+    assignedAgentId: credential.fixedAssignedAgentId ?? null,
+    reason: LeadAssignmentReason.manual_assignment,
+    zipCode: zipCode ?? null,
+    message: `${credential.sourceLabel ?? "Website"} lead routed directly to ${organization.name}; geographic ZIP routing was not applied.`
+  };
 }
 
 export function getClientIp(headers: Headers) {
