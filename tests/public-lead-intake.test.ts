@@ -6,6 +6,7 @@ import {
   corsHeaders,
   duplicateLeadActivityMessage,
   duplicateLeadUpdateData,
+  getCredentialRoutingDecision,
   inferLeadType,
   isAllowedOrigin,
   normalizePublicLead,
@@ -28,7 +29,9 @@ test("origin checks allow server-to-server requests and the configured website o
 test("site-specific credentials authenticate and identify their lead source", () => {
   const configured = {
     defaultKey: "lafayette-secret",
-    nationalRealtyKey: "national-realty-secret"
+    nationalRealtyKey: "national-realty-secret",
+    nationalRealtyOrganizationId: "org_national",
+    nationalRealtyAssignedAgentId: "user_melanie"
   };
 
   assert.deepEqual(resolvePublicLeadCredential("lafayette-secret", configured), {
@@ -36,9 +39,58 @@ test("site-specific credentials authenticate and identify their lead source", ()
   });
   assert.deepEqual(resolvePublicLeadCredential("national-realty-secret", configured), {
     id: "national-realty-acadiana",
-    sourceLabel: "National Realty Acadiana"
+    sourceLabel: "National Realty Acadiana",
+    fixedOrganizationId: "org_national",
+    fixedAssignedAgentId: "user_melanie"
   });
   assert.equal(resolvePublicLeadCredential("wrong-secret", configured), null);
+});
+
+test("National Realty credential pins leads to its organization and assignee without ZIP territory routing", async () => {
+  const queries: unknown[] = [];
+  const decision = await getCredentialRoutingDecision(
+    {
+      organization: {
+        findFirst: async (args) => {
+          queries.push(args);
+          return { id: "org_national", name: "National Realty" };
+        }
+      },
+      membership: {
+        findUnique: async (args) => {
+          queries.push(args);
+          return { id: "membership_1" };
+        }
+      }
+    },
+    {
+      id: "national-realty-acadiana",
+      sourceLabel: "National Realty Acadiana",
+      fixedOrganizationId: "org_national",
+      fixedAssignedAgentId: "user_melanie"
+    },
+    "70508"
+  );
+
+  assert.equal(decision?.organizationId, "org_national");
+  assert.equal(decision?.assignedAgentId, "user_melanie");
+  assert.equal(decision?.zipCode, "70508");
+  assert.equal(decision?.reason, "manual_assignment");
+  assert.match(decision?.message ?? "", /geographic ZIP routing was not applied/);
+  assert.equal(queries.length, 2);
+});
+
+test("ordinary Lafayette credential continues using ZIP territory routing", async () => {
+  const decision = await getCredentialRoutingDecision(
+    {
+      organization: { findFirst: async () => { throw new Error("should not query"); } },
+      membership: { findUnique: async () => { throw new Error("should not query"); } }
+    },
+    { id: "lafayette-real-estate" },
+    "70508"
+  );
+
+  assert.equal(decision, null);
 });
 
 test("API key verification requires an exact header key", () => {
